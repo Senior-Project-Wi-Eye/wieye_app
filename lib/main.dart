@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'login_screen.dart';
 
 void main() {
   runApp(const WieyeApp());
@@ -11,9 +12,10 @@ class WieyeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.tealAccent),
       ),
-      home: const HomeScreen(title: 'Wi-Eye Demo'),
+      debugShowCheckedModeBanner: false,
+      home: LoginScreen(),
     );
   }
 }
@@ -76,6 +78,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+
+// Show user their devices and it's information
 class DeviceScreen extends StatelessWidget {
   const DeviceScreen({super.key});
 
