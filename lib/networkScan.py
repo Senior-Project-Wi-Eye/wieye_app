@@ -51,7 +51,7 @@ def save_results(scan_results, filename='wieye_app/lib/NmapScanResult.json'):
 def nmapScan():
     # Change the 10 dot to whatever the network local ip is
     print ("Starting scan...")
-    target = "10.0.0.0/24"
+    target = "10.15.0.0/20"
     # target = input("Enter the target IP (e.g., '192.168.1.0/24'): ")
     output = run_nmap_scan(target)
     scan_results = parse_nmap_output(output)
