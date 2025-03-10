@@ -1,20 +1,18 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // To use rootBundle for loading assets
 
-// Show user their devices and it's information
-class DeviceScreen extends StatelessWidget {
+class DeviceScreen extends StatefulWidget {
   const DeviceScreen({super.key});
 
-  // List of decives on network
-  final List<Map<String, String>> devices = const [
-    {"name": "Windows", "type": "monitor", "ip": "10.0.0.21"},
-    {"name": "iPhone", "type": "smartphone", "ip": "10.0.0.22"},
-    {"name": "Laptop", "type": "laptop", "ip": "10.0.0.23"},
-    {"name": "Android", "type": "smartphone", "ip": "10.0.0.24"},
-    {"name": "iPad", "type": "tablet", "ip": "10.0.0.25"},
-    {"name": "Unidentified Device", "type": "unknown", "ip": "10.0.0.26"},
-  ];
+  @override
+  _DeviceScreenState createState() => _DeviceScreenState();
+}
 
-  // Assign icons to devices
+class _DeviceScreenState extends State<DeviceScreen> {
+  List<Map<String, String>> devices = [];
+
+  // Assign icons to devices based on the OS
   IconData getDeviceIcon(String type) {
     switch (type) {
       case "smartphone":
@@ -32,30 +30,71 @@ class DeviceScreen extends StatelessWidget {
     }
   }
 
+  // Load the JSON files and parse them
+  Future<void> loadData() async {
+    // Load IP result from 'lib' directory
+    final ipData = await rootBundle.loadString('lib/IPResult.json');
+    final ipJson = json.decode(ipData);
+    final List ipHosts = ipJson['hosts'];
+
+    // Load OS result from 'lib' directory
+    final osData = await rootBundle.loadString('lib/OSResult.json');
+    final osJson = json.decode(osData);
+    final List osHosts = osJson['hosts'];
+
+    // Merge IP and OS results
+    List<Map<String, String>> devicesList = [];
+    for (var ipHost in ipHosts) {
+      String ip = ipHost['host'];
+      String status = ipHost['status'];
+
+      // Find the OS data for the matching IP
+      var osHost = osHosts.firstWhere(
+            (os) => os['host'] == ip,
+        orElse: () => {'os': 'Unknown'},
+      );
+      String os = osHost['os'] ?? 'Unknown';
+
+      devicesList.add({
+        "ip": ip,
+        "status": status,
+        "os": os,
+      });
+    }
+
+    setState(() {
+      devices = devicesList;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadData();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Devices")),
-      body: Column(
-        children: [
-          // Device List
-          Expanded(
-            child: ListView.builder(
-              itemCount: devices.length,
-              itemBuilder: (context, index) {
-                var device = devices[index];
-                return Card(
-                  child: ListTile(
-                    leading: Icon(getDeviceIcon(device["type"]!), size: 40),
-                    title: Text(device["name"]!),
-                    subtitle: Text("IP Address: ${device["ip"]}"),
-                    trailing: const Icon(Icons.circle, color: Colors.green, size: 14),
-                  ),
-                );
-              },
+      body: devices.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
+        itemCount: devices.length,
+        itemBuilder: (context, index) {
+          var device = devices[index];
+          // Determine the color based on the device status
+          Color statusColor = device['status'] == 'up' ? Colors.green : Colors.red;
+
+          return Card(
+            child: ListTile(
+              leading: Icon(getDeviceIcon(device["os"] ?? 'unknown'), size: 40),
+              title: Text("IP: ${device['ip']}"),
+              subtitle: Text("OS: ${device['os']} - Status: ${device['status']}"),
+              trailing: Icon(Icons.circle, color: statusColor, size: 14), // Change color based on status
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

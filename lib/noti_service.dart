@@ -14,10 +14,12 @@ class NotiService {
     // prepare android init settings
     const initSettingsAndroid =
       AndroidInitializationSettings('@mipmap/android_logo');
+   // const initSettingsWindows = WindowsInitializationSettings();
 
     // inti settings
     const intiSettings = InitializationSettings(
         android: initSettingsAndroid,
+       // windows: initSettingsWindows,
     );
 
     // initizalize the  plugin!
