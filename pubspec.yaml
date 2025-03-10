@@ -37,7 +37,7 @@ dependencies:
   openid_client: ^0.4.6
   http: ^0.13.6
   url_launcher: ^6.3.1
-  flutter_local_notifications: ^16.1.0
+  flutter_local_notifications: ^18.0.1
 
 dev_dependencies:
   flutter_test:
