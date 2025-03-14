@@ -3,10 +3,14 @@ import 'noti_service.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
 
+// Create a global instance that can be accessed anywhere
+final globalNotiService = NotiService();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  NotiService().intiNotification();
+  // Use the global instance
+  await globalNotiService.initNotification();
 
   runApp(const WieyeApp());
 }
@@ -21,8 +25,7 @@ class WieyeApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.tealAccent),
       ),
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(title: "Home"),
-      //home: LoginScreen(), // testing notifications
+      home: HomeScreen(title: "Home"), // Keep as is since HomeScreen doesn't accept notiService
     );
   }
 }

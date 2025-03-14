@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsFlutterBinding.ensureInitialized();
-    NotiService().intiNotification();
+    NotiService().initNotification();
   }
   @override
   Widget build(BuildContext context) {

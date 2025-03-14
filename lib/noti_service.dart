@@ -2,13 +2,18 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotiService {
   final notificationsPlugin = FlutterLocalNotificationsPlugin();
-
+  static final NotiService _instance = NotiService._internal();
   bool _isInitialized = false;
-
   bool get isInitialized => _isInitialized;
 
+  factory NotiService() {
+    return _instance;
+  }
+
+  NotiService._internal();
+
   // INITIALIZE
-  Future<void> intiNotification() async {
+  Future<void> initNotification() async {
     if (_isInitialized) return; // prevent re-initalization
 
     // prepare android init settings
@@ -24,6 +29,8 @@ class NotiService {
 
     // initizalize the  plugin!
     await notificationsPlugin.initialize(intiSettings);
+
+    _isInitialized = true;  // Mark as initialized
   }
 
   // NOTIFICATIONS DETAIL SETUP
@@ -44,14 +51,19 @@ class NotiService {
     int id = 0,
     String? title,
     String? body,
+  }) async {
+    if (!_isInitialized) {
+      print('Notification plugin not initialized yet!');
+      await initNotification();  // Try to initialize if not done
+    }
 
-  } ) async{
-    return notificationsPlugin.show(id,
+    return notificationsPlugin.show(
+      id,
       title,
       body,
-      const NotificationDetails(),
+      notificationDetails(),
     );
   }
-  // ON NOTi TAP
+// ON NOTi TAP
 
 }
