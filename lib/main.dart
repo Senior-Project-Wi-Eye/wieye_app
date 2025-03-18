@@ -9,8 +9,12 @@ final globalNotiService = NotiService();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Use the global instance
-  await globalNotiService.initNotification();
+  try {
+    await globalNotiService.initNotification();
+    print('Notification service initialized');
+  } catch (e) {
+    print('Error initializing notifications: $e');
+  }
 
   runApp(const WieyeApp());
 }
@@ -22,10 +26,10 @@ class WieyeApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.tealAccent),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlueAccent),
       ),
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(title: "Home"), // Keep as is since HomeScreen doesn't accept notiService
+      home: HomeScreen(title: "Wi-Eye"),
     );
   }
 }
