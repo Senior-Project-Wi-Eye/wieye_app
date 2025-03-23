@@ -1,3 +1,4 @@
+import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // To use rootBundle for loading assets
@@ -129,6 +130,13 @@ class _DeviceScreenState extends State<DeviceScreen> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Close'),
             ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                scanDevice(device['ip']);    // Trigger scan
+              },
+              child: const Text('Scan'),
+            ),
           ],
         );
       },
@@ -160,5 +168,48 @@ class _DeviceScreenState extends State<DeviceScreen> {
         },
       ),
     );
+  }
+
+  Future<void> scanDevice(String ip) async {
+    const apiUrl = 'http://10.15.159.179:5000/scan'; // Flask IP
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'ip': ip}),
+      );
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        print("Scan success: $result");
+
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text("Scan Complete"),
+            content: Text("Results saved.\nIP: $ip\n\nCheck updated info in app."),
+          ),
+        );
+      } else {
+        print("Scan failed: ${response.body}");
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text("Scan Failed"),
+            content: Text("Server error: ${response.body}"),
+          ),
+        );
+      }
+    } catch (e) {
+      print("Error calling scan API: $e");
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text("Error"),
+          content: Text("Could not connect to scanner server."),
+        ),
+      );
+    }
   }
 }
