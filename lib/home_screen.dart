@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'main.dart';
 import 'noti_service.dart';
 import 'device_screen.dart';
 
@@ -22,15 +23,18 @@ class _HomeScreenState extends State<HomeScreen> {
   // List of screen
   static final List<Widget> _screens = <Widget>[
     const Center(child: Text('Home Screen')),
-    const DeviceScreen(),
+    const DeviceScreen(title: "Devices"),
   ];
 
   @override
   void initState() {
     super.initState();
-    WidgetsFlutterBinding.ensureInitialized();
-    NotiService().initNotification();
+    // Set context after the first build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      globalNotiService.setContext(context);
+    });
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,9 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () async {
                 // Wait for initialization to complete before showing notification
                 if (NotiService().isInitialized) {
-                  await NotiService().showNotification(
+                  globalNotiService.showNotification(
                     title: "Wi-Eye",
-                    body: "Body",
+                    body: "Warning Malware Detected!",
                   );
                 } else {
                   print("Notification plugin not initialized yet!");
@@ -76,6 +80,10 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Device',
           ),
         ],
+        backgroundColor: Colors.black, // Set background color to black
+        selectedItemColor: Colors.lightBlueAccent, // Set selected item color to white
+        unselectedItemColor: Colors.grey, // Set unselected item color to grey
+        type: BottomNavigationBarType.fixed, // Ensure the background color is applied
       ),
     );
   }

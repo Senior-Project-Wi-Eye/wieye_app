@@ -1,10 +1,17 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/material.dart';
 
 class NotiService {
   final notificationsPlugin = FlutterLocalNotificationsPlugin();
   static final NotiService _instance = NotiService._internal();
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
+
+  BuildContext? _context;
+  void setContext(BuildContext context) {
+    _context = context;
+  }
 
   factory NotiService() {
     return _instance;
@@ -16,19 +23,18 @@ class NotiService {
   Future<void> initNotification() async {
     if (_isInitialized) return; // prevent re-initalization
 
-    // prepare android init settings
-    const initSettingsAndroid =
-      AndroidInitializationSettings('@mipmap/android_logo');
-   // const initSettingsWindows = WindowsInitializationSettings();
+    if (Platform.isAndroid) {
+      // prepare android init settings
+      const initSettingsAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // inti settings
-    const intiSettings = InitializationSettings(
+      // inti settings
+      const initSettings = InitializationSettings(
         android: initSettingsAndroid,
-       // windows: initSettingsWindows,
-    );
+      );
 
-    // initizalize the  plugin!
-    await notificationsPlugin.initialize(intiSettings);
+      // initizalize the  plugin!
+      await notificationsPlugin.initialize(initSettings);
+    }
 
     _isInitialized = true;  // Mark as initialized
   }
@@ -53,17 +59,47 @@ class NotiService {
     String? body,
   }) async {
     if (!_isInitialized) {
-      print('Notification plugin not initialized yet!');
-      await initNotification();  // Try to initialize if not done
+      await initNotification();
     }
 
-    return notificationsPlugin.show(
-      id,
-      title,
-      body,
-      notificationDetails(),
-    );
-  }
-// ON NOTi TAP
+    if (Platform.isAndroid) {
+      // Android notification
+      const androidDetails = AndroidNotificationDetails(
+        'network_channel_id',
+        'Network Notifications',
+        channelDescription: 'Network Notifications Channel',
+        importance: Importance.max,
+        priority: Priority.high,
+      );
 
+      const details = NotificationDetails(android: androidDetails);
+
+      return notificationsPlugin.show(id, title, body, details);
+    }
+    else if (Platform.isWindows && _context != null) {
+      // Windows fallback - show a snackbar or dialog
+      ScaffoldMessenger.of(_context!).showSnackBar(
+        SnackBar(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (title != null)
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              if (body != null)
+                Text(body),
+            ],
+          ),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Dismiss',
+            onPressed: () {},
+          ),
+        ),
+      );
+    }
+  }
 }

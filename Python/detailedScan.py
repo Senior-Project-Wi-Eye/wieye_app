@@ -2,7 +2,9 @@ import subprocess
 import json
 import sys
 import time
+import os
 
+target = "10.0.0.186"
 def run_nmap_scan(target):
     command = ["nmap", "-A", target]  # Using -A for a detailed scan
     
@@ -82,13 +84,14 @@ def parse_nmap_output(output):
     return scan_results
 
 def save_results(scan_results, filename='wieye_app/lib/DetailedResult.json'):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)  # ✅ Create folders if missing
     with open(filename, 'w') as file:
         json.dump(scan_results, file, indent=4)
     print(f"Nmap scan results saved to {filename}")
 
-def nmapScan(ipAddress):
+
+def nmapScan(target):
     print("Starting scan...")
-    target = ipAddress
     
     start_time = time.time()  # Record the start time
     output = run_nmap_scan(target)
@@ -99,5 +102,4 @@ def nmapScan(ipAddress):
     scan_duration = end_time - start_time  # Calculate the scan duration
     print(f"Scan completed in {scan_duration:.2f} seconds.")  # Display the time taken
 
-if __name__ == "__main__":
-    nmapScan("172.20.10.7")
+nmapScan(target)
