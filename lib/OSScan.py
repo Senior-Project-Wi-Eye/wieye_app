@@ -53,12 +53,16 @@ def save_results(scan_results, scan_duration, filename='wieye_app/lib/OSResult.j
         json.dump(scan_results, file, indent=4)
     print(f"OS scan results saved to {filename}")
 
-def osscan():
-    target = "10.0.0.0/24"
-    print("Scanning...")
+def osscan(IPAddress):
+    target = IPAddress
+    print("Scanning for OS...")
     output, scan_duration = run_osscan(target)
     scan_results = parse_osscan_output(output)
     save_results(scan_results, scan_duration)
 
-while True:
-    osscan()
+def constantOSScan(IPAddress):
+    while True:
+        osscan(IPAddress)
+
+if __name__ == "__main__":
+    constantOSScan("10.0.1.0/24")

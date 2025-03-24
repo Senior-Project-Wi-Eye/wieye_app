@@ -1,20 +1,19 @@
 {
     "hosts": [
         {
-            "host": "10.0.0.186",
+            "host": "172.20.10.7",
             "status": "Up",
             "os": "Microsoft Windows 10 1809 - 21H2",
             "ports": [
-                "135/tcp   open  msrpc           Microsoft Windows RPC",
-                "139/tcp   open  netbios-ssn     Microsoft Windows netbios-ssn",
-                "445/tcp   open  microsoft-ds?",
-                "902/tcp   open  ssl/vmware-auth VMware Authentication Daemon 1.10 (Uses VNC, SOAP)",
-                "912/tcp   open  vmware-auth     VMware Authentication Daemon 1.0 (Uses VNC, SOAP)",
-                "2179/tcp  open  vmrdp?",
-                "16992/tcp open  http            Intel Active Management Technology http admin"
+                "135/tcp  open  msrpc           Microsoft Windows RPC",
+                "139/tcp  open  netbios-ssn     Microsoft Windows netbios-ssn",
+                "445/tcp  open  microsoft-ds?",
+                "902/tcp  open  ssl/vmware-auth VMware Authentication Daemon 1.10 (Uses VNC, SOAP)",
+                "912/tcp  open  vmware-auth     VMware Authentication Daemon 1.0 (Uses VNC, SOAP)",
+                "2179/tcp open  vmrdp?"
             ],
             "services": [
-                "OS: Windows; Device: remote management; CPE: cpe:/o:microsoft:windows, cpe:/h:intel:active_management_technology"
+                "OS: Windows; CPE: cpe:/o:microsoft:windows"
             ],
             "traceroute": "Unknown",
             "mac_address": "Unknown",

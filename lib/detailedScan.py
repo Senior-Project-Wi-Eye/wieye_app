@@ -86,9 +86,9 @@ def save_results(scan_results, filename='wieye_app/lib/DetailedResult.json'):
         json.dump(scan_results, file, indent=4)
     print(f"Nmap scan results saved to {filename}")
 
-def nmapScan():
+def nmapScan(ipAddress):
     print("Starting scan...")
-    target = "10.0.0.186"
+    target = ipAddress
     
     start_time = time.time()  # Record the start time
     output = run_nmap_scan(target)
@@ -99,4 +99,5 @@ def nmapScan():
     scan_duration = end_time - start_time  # Calculate the scan duration
     print(f"Scan completed in {scan_duration:.2f} seconds.")  # Display the time taken
 
-nmapScan()
+if __name__ == "__main__":
+    nmapScan("172.20.10.7")

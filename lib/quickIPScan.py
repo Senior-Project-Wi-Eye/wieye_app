@@ -49,13 +49,16 @@ def save_results(scan_results, scan_duration, filename='wieye_app/lib/IPResult.j
         json.dump(scan_results, file, indent=4)
     print(f"Ping scan results saved to {filename}")
 
-def pingScan():
-    target = "10.0.0.0/24"
-    print("Scanning...")
+def pingScan(networkIP):
+    target = networkIP
+    print("Scanning for IPs...")
     output, scan_duration = run_ping_scan(target)
     scan_results = parse_nmap_output(output)
     save_results(scan_results, scan_duration)
 
-if __name__ == "__main__":
+def constantPingScan(networkIP):
     while True:
-        pingScan()
+        pingScan(networkIP)
+
+if __name__ == "__main__":
+    constantPingScan("10.0.1.0/24")
