@@ -89,6 +89,7 @@ def save_results(scan_results, filename='../lib/DetailedResult.json'):
         json.dump(scan_results, file, indent=4)
     print(f"Nmap scan results saved to {filename}")
 
+
 def nmapScan(target):
     print("Starting scan...")
     
