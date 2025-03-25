@@ -43,7 +43,7 @@ def parse_nmap_output(output):
     
     return scan_results
 
-def save_results(scan_results, scan_duration, filename='wieye_app/lib/IPResult.json'): # Save result to a JSON file
+def save_results(scan_results, scan_duration, filename='lib/IPResult.json'): # Save result to a JSON file
     scan_results["scan_duration"] = f"{scan_duration:.2f} seconds"
     with open(filename, 'w') as file:
         json.dump(scan_results, file, indent=4)

@@ -18,7 +18,7 @@ def scan_device():
         detailedScan.nmapScan(ip)
 
         # Read result JSON and return it
-        result_path = 'wieye_app/lib/DetailedResult.json'
+        result_path = '../lib/DetailedResult.json'
         if not os.path.exists(result_path):
             return jsonify({'error': 'Scan failed or file not found'}), 500
 
