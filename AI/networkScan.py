@@ -1,24 +1,15 @@
 import subprocess
 import json
 import sys
-import time
-
-def run_ping_scan(target):
-    command = ["nmap", "-sP", target]
+def run_nmap_scan(target):
+    command = ["nmap", "-sS", "-O", target]  # Added -O for OS fingerprinting
     
     try:
-        start_time = time.time()
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        end_time = time.time()
-        
         if result.stderr:
             print("Error executing nmap:", result.stderr)
             sys.exit(1)
-        
-        scan_duration = end_time - start_time
-        print(f"Ping scan completed in {scan_duration:.2f} seconds.")
-        
-        return result.stdout, scan_duration
+        return result.stdout
     except Exception as e:
         print("An error occurred while executing nmap:", str(e))
         sys.exit(1)
@@ -27,6 +18,7 @@ def parse_nmap_output(output):
     scan_results = {"hosts": []}
     lines = output.split("\n")
     host_info = {}
+    
     for line in lines:
         if "Nmap scan report for" in line:
             if host_info: 
@@ -35,30 +27,32 @@ def parse_nmap_output(output):
             host = line.split(" ")[-1]
             if "(" in host and ")" in host:
                 host = host[host.find("(")+1:host.find(")")]
-            if "." in host:  # This condition filters out hostnames and includes only IP addresses
-                host_info = {"host": host, "status": "up"}
+            host_info = {"host": host, "status": "up", "manufacturer": "Unknown", "os": "Unknown"}
+        elif "MAC Address:" in line:
+            parts = line.split(" ", 3)
+            if len(parts) > 2:
+                host_info["mac"] = parts[2]
+                host_info["manufacturer"] = parts[3].strip("()") if len(parts) == 4 else "Unknown"
+        elif "OS details:" in line:
+            host_info["os"] = line.split("OS details:")[1].strip()
+        elif "Running:" in line:
+            host_info["os"] = line.split("Running:")[1].strip()
     
     if host_info:
         scan_results["hosts"].append(host_info)
     
     return scan_results
 
-def save_results(scan_results, scan_duration, filename='../lib/IPResult.json'): # Save result to a JSON file
-    scan_results["scan_duration"] = f"{scan_duration:.2f} seconds"
+def save_results(scan_results, filename='NmapScanResult.json'):
     with open(filename, 'w') as file:
         json.dump(scan_results, file, indent=4)
-    print(f"Ping scan results saved to {filename}")
+    print(f"Nmap scan results saved to {filename}")
 
-def pingScan(networkIP):
-    target = networkIP
-    print("Scanning for IPs...")
-    output, scan_duration = run_ping_scan(target)
+def nmapScan():
+    target = "10.0.0.0/24"
+    # target = input("Enter the target IP (e.g., '192.168.1.0/24'): ")
+    output = run_nmap_scan(target)
     scan_results = parse_nmap_output(output)
-    save_results(scan_results, scan_duration)
+    save_results(scan_results)
 
-def constantPingScan(networkIP):
-    while True:
-        pingScan(networkIP)
-
-if __name__ == "__main__":
-    constantPingScan("10.0.1.0/24")
+nmapScan()

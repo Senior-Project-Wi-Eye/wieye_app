@@ -47,7 +47,7 @@ def parse_osscan_output(output):
     
     return scan_results
 
-def save_results(scan_results, scan_duration, filename='lib/OSResult.json'):
+def save_results(scan_results, scan_duration, filename='../lib/OSResult.json'):
     scan_results["scan_duration"] = f"{scan_duration:.2f} seconds"
     with open(filename, 'w') as file:
         json.dump(scan_results, file, indent=4)
