@@ -16,6 +16,8 @@ void main() async {
     print('Error initializing notifications: $e');
   }
 
+  NotiService().startMalwareCheck();
+
   runApp(const WieyeApp());
 }
 

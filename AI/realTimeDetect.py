@@ -3,14 +3,28 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, LabelEncoder
+import os
+import requests
 
 # Load the trained model and preprocessing tools
-log_reg_model = joblib.load("ping_scan_detection_model.pkl")
-scaler = joblib.load("scaler.pkl")
-label_encoder = joblib.load("label_encoder.pkl")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "ping_scan_detection_model.pkl")
+SCALER_PATH = os.path.join(BASE_DIR, "scaler.pkl")
+ENCODER_PATH = os.path.join(BASE_DIR, "label_encoder.pkl")
+
+log_reg_model = joblib.load(MODEL_PATH)
+scaler = joblib.load(SCALER_PATH)
+label_encoder = joblib.load(ENCODER_PATH)
+
+#log_reg_model = joblib.load("ping_scan_detection_model.pkl")
+#scaler = joblib.load("scaler.pkl")
+#label_encoder = joblib.load("label_encoder.pkl")
 
 # Define the network interface for packet capture
-NETWORK_INTERFACE = r"\Device\NPF_{28DF2159-9CD6-475C-977B-40917DC2795C}"
+NETWORK_INTERFACE = r"\Device\NPF_{46D9FA86-FE63-4E98-8BDD-D9D389631807}"
+
+# Original
+# r"\Device\NPF_{28DF2159-9CD6-475C-977B-40917DC2795C}"
 
 # Function to safely transform ports (handles unseen values)
 def transform_port(port):
@@ -77,6 +91,13 @@ def capture_live_traffic():
             result = "Malicious" if prediction[0] == 1 else "Normal Traffic"
 
             print(f"[+] Classification: {result} | Info: {info_text}")
+
+            # Notify Flask server
+            if result == "Malicious":
+                try:
+                    requests.post("http://127.0.0.1:5000/trigger-malware", json={"info": info_text})
+                except Exception as e:
+                    print(f"[!] Failed to notify: {e}")
 
 # Run the live capture function
 if __name__ == "__main__":
