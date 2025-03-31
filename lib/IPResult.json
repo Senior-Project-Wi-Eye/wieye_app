@@ -1,29 +1,57 @@
 {
     "hosts": [
         {
-            "host": "10.0.1.1",
-            "status": "up"
-        },
-        {
-            "host": "10.0.1.11",
+            "host": "10.15.159.179",
             "status": "up"
         },
         {
             "host": "10.0.1.69",
+            "status": "down"
+        },
+        {
+            "host": "10.0.0.13",
+            "status": "down"
+        },
+        {
+            "host": "10.0.0.33",
             "status": "up"
         },
         {
-            "host": "10.0.1.114",
+            "host": "10.0.0.35",
             "status": "up"
         },
         {
-            "host": "10.0.1.172",
+            "host": "10.0.0.76",
             "status": "up"
         },
         {
-            "host": "10.0.1.168",
+            "host": "10.0.0.125",
+            "status": "up"
+        },
+        {
+            "host": "10.0.0.135",
+            "status": "up"
+        },
+        {
+            "host": "10.0.0.145",
+            "status": "up"
+        },
+        {
+            "host": "10.0.0.161",
+            "status": "up"
+        },
+        {
+            "host": "10.0.0.208",
+            "status": "up"
+        },
+        {
+            "host": "10.0.0.211",
+            "status": "up"
+        },
+        {
+            "host": "10.0.0.186",
             "status": "up"
         }
     ],
-    "scan_duration": "9.76 seconds"
+    "scan_duration": "15.01 seconds"
 }

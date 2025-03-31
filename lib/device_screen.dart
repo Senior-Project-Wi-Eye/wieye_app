@@ -182,13 +182,33 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-        print("Scan success: $result");
+
+        // Grab the scanned device result
+        final newHost = result['hosts'][0];
+
+        // Update only the matching device in the list
+        final updatedDevices = devices.map((device) {
+          if (device['ip'] == newHost['host']) {
+            return {
+              ...device,
+              'status': newHost['status'],
+              'os': newHost['os'],
+              'ports': newHost['ports'],
+              'services': newHost['services'],
+            };
+          }
+          return device;
+        }).toList();
+
+        setState(() {
+          devices = updatedDevices;
+        });
 
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
             title: Text("Scan Complete"),
-            content: Text("Results saved.\nIP: $ip\n\nCheck updated info in app."),
+            content: Text("Device ${newHost['host']} updated."),
           ),
         );
       } else {
@@ -212,4 +232,5 @@ class _DeviceScreenState extends State<DeviceScreen> {
       );
     }
   }
+
 }

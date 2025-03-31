@@ -1,8 +1,16 @@
 from flask import Flask, request, jsonify
 import detailedScan
+import OSScan
+import quickIPScan
 import os
+import threading
 
 app = Flask(__name__)
+
+def start_background_scans():
+    threading.Thread(target=OSScan.constantOSScan, args=("10.0.1.0/24",), daemon=True).start()
+    threading.Thread(target=quickIPScan.constantPingScan, args=("10.0.1.0/24",), daemon=True).start()
+
 
 @app.route('/scan', methods=['POST'])
 def scan_device():
@@ -18,7 +26,7 @@ def scan_device():
         detailedScan.nmapScan(ip)
 
         # Read result JSON and return it
-        result_path = 'wieye_app/lib/DetailedResult.json'
+        result_path = '../lib/DetailedResult.json'
         if not os.path.exists(result_path):
             return jsonify({'error': 'Scan failed or file not found'}), 500
 
@@ -29,4 +37,5 @@ def scan_device():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
+    start_background_scans()
     app.run(host='0.0.0.0', port=5000)

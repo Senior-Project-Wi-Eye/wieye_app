@@ -83,8 +83,8 @@ def parse_nmap_output(output):
     
     return scan_results
 
-def save_results(scan_results, filename='wieye_app/lib/DetailedResult.json'):
-    os.makedirs(os.path.dirname(filename), exist_ok=True)  # ✅ Create folders if missing
+def save_results(scan_results, filename='../lib/DetailedResult.json'):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)  # Create folders if missing
     with open(filename, 'w') as file:
         json.dump(scan_results, file, indent=4)
     print(f"Nmap scan results saved to {filename}")
