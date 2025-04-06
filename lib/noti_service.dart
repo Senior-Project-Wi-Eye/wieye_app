@@ -1,6 +1,9 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class NotiService {
   final notificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -9,6 +12,12 @@ class NotiService {
   bool get isInitialized => _isInitialized;
 
   BuildContext? _context;
+  Timer? _malwareTimer;
+
+  final List<MalwareNotification> _notificationHistory = [];
+
+  List<MalwareNotification> get notificationHistory => _notificationHistory;
+
   void setContext(BuildContext context) {
     _context = context;
   }
@@ -52,6 +61,28 @@ class NotiService {
     );
   }
 
+  // START Malware check
+  void startMalwareCheck() {
+    _malwareTimer ??= Timer.periodic(const Duration(seconds: 5), (timer) async {
+      try {
+        final res = await http.get(Uri.parse('http://10.15.159.179:5000/malware-alert'));
+        final data = jsonDecode(res.body);
+        if (data["malware"] == true) {
+          final String info = data["info"] ?? "Malicious Traffic Detected!";
+          showNotification(title: "Malware Detected", body: info);
+        }
+      } catch (e) {
+        print("Failed to check malware alert: $e");
+      }
+    });
+  }
+
+  // Stop Malware Check
+  void stopMalwareCheck() {
+    _malwareTimer?.cancel();
+    _malwareTimer = null;
+  }
+
   // SHOW NOTIFICATION
   Future<void> showNotification({
     int id = 0,
@@ -60,6 +91,17 @@ class NotiService {
   }) async {
     if (!_isInitialized) {
       await initNotification();
+    }
+
+    // Save to history (common to all platforms)
+    if (title != null && body != null) {
+      _notificationHistory.add(
+        MalwareNotification(
+          title: title,
+          body: body,
+          timestamp: DateTime.now(),
+        ),
+      );
     }
 
     if (Platform.isAndroid) {
@@ -102,4 +144,17 @@ class NotiService {
       );
     }
   }
+
+}
+
+class MalwareNotification {
+  final String title;
+  final String body;
+  final DateTime timestamp;
+
+  MalwareNotification({
+    required this.title,
+    required this.body,
+    required this.timestamp,
+  });
 }

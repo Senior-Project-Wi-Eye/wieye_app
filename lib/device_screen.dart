@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // To use rootBundle for loading assets
 
+bool isScanning = false;
+
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({super.key, required this.title});
   final String title;
@@ -33,56 +35,62 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
   // Load the JSON files and parse them
   Future<void> loadData() async {
-    // Load IP result from 'lib' directory
-    final ipData = await rootBundle.loadString('lib/IPResult.json');
-    final ipJson = json.decode(ipData);
-    final List ipHosts = ipJson['hosts'];
+    const apiUrl = 'http://10.15.159.179:5000/get-all-results';
 
-    // Load OS result from 'lib' directory
-    final osData = await rootBundle.loadString('lib/OSResult.json');
-    final osJson = json.decode(osData);
-    final List osHosts = osJson['hosts'];
+    try {
+      final response = await http.get(Uri.parse(apiUrl));
 
-    // Load detailed result from 'lib' directory
-    final detailData = await rootBundle.loadString('lib/DetailedResult.json');
-    final detailJson = json.decode(detailData);
-    final List detailHosts = detailJson['hosts'];
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
 
-    // Merge IP, OS, and Detail results
-    List<Map<String, dynamic>> devicesList = [];
-    for (var ipHost in ipHosts) {
-      String ip = ipHost['host'];
-      String status = ipHost['status'];
+        final ipJson = jsonDecode(result['ip_result']);
+        final osJson = jsonDecode(result['os_result']);
+        final detailJson = jsonDecode(result['detailed_result']);
 
-      // Find the OS data for the matching IP
-      var osHost = osHosts.firstWhere(
-            (os) => os['host'] == ip,
-        orElse: () => {'os': 'Unknown'},
-      );
-      String os = osHost['os'] ?? 'Unknown';
+        final List ipHosts = ipJson['hosts'];
+        final List osHosts = osJson['hosts'];
+        final List detailHosts = detailJson['hosts'];
 
-      // Find detailed data for the matching IP
-      var detailHost = detailHosts.firstWhere(
-            (detail) => detail['host'] == ip,
-        orElse: () => {'ports': [], 'services': []},
-      );
+        List<Map<String, dynamic>> devicesList = [];
 
-      List ports = detailHost['ports'] ?? [];
-      List services = detailHost['services'] ?? [];
+        for (var ipHost in ipHosts) {
+          String ip = ipHost['host'];
+          String status = ipHost['status'];
 
-      devicesList.add({
-        "ip": ip,
-        "status": status,
-        "os": os,
-        "ports": ports,
-        "services": services,
-      });
+          var osHost = osHosts.firstWhere(
+                (os) => os['host'] == ip,
+            orElse: () => {'os': 'Unknown'},
+          );
+          String os = osHost['os'] ?? 'Unknown';
+
+          var detailHost = detailHosts.firstWhere(
+                (detail) => detail['host'] == ip,
+            orElse: () => {'ports': [], 'services': []},
+          );
+
+          List ports = detailHost['ports'] ?? [];
+          List services = detailHost['services'] ?? [];
+
+          devicesList.add({
+            "ip": ip,
+            "status": status,
+            "os": os,
+            "ports": ports,
+            "services": services,
+          });
+        }
+
+        setState(() {
+          devices = devicesList;
+        });
+      } else {
+        throw Exception('Failed to load data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error loading data: $e');
     }
-
-    setState(() {
-      devices = devicesList;
-    });
   }
+
 
   @override
   void initState() {
@@ -171,7 +179,11 @@ class _DeviceScreenState extends State<DeviceScreen> {
   }
 
   Future<void> scanDevice(String ip) async {
-    const apiUrl = 'http://10.15.159.179:5000/scan'; // Flask IP
+    const apiUrl = 'http://10.15.159.179:5000/scan';
+
+    setState(() {
+      isScanning = true;
+    });
 
     try {
       final response = await http.post(
@@ -182,11 +194,8 @@ class _DeviceScreenState extends State<DeviceScreen> {
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-
-        // Grab the scanned device result
         final newHost = result['hosts'][0];
 
-        // Update only the matching device in the list
         final updatedDevices = devices.map((device) {
           if (device['ip'] == newHost['host']) {
             return {
@@ -212,7 +221,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
           ),
         );
       } else {
-        print("Scan failed: ${response.body}");
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
@@ -222,7 +230,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
         );
       }
     } catch (e) {
-      print("Error calling scan API: $e");
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -230,6 +237,10 @@ class _DeviceScreenState extends State<DeviceScreen> {
           content: Text("Could not connect to scanner server."),
         ),
       );
+    } finally {
+      setState(() {
+        isScanning = false;
+      });
     }
   }
 

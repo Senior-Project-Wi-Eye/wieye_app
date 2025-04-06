@@ -2,6 +2,7 @@ import subprocess
 import json
 import sys
 import time
+import os
 
 def run_ping_scan(target):
     command = ["nmap", "-sP", target]
@@ -43,7 +44,10 @@ def parse_nmap_output(output):
     
     return scan_results
 
-def save_results(scan_results, scan_duration, filename='../lib/IPResult.json'): # Save result to a JSON file
+def save_results(scan_results, scan_duration): # Save result to a JSON file
+    FLUTTER_LIB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'wieye_app', 'lib'))
+    filename = os.path.join(FLUTTER_LIB_PATH, 'IPResult.json')
+
     scan_results["scan_duration"] = f"{scan_duration:.2f} seconds"
     with open(filename, 'w') as file:
         json.dump(scan_results, file, indent=4)
