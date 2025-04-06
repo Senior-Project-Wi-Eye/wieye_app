@@ -1,37 +1,13 @@
 {
     "hosts": [
         {
-            "host": "10.15.159.179",
-            "os": "Microsoft Windows 10 1809 - 21H2"
-        },
-        {
-            "host": "10.0.1.69",
-            "os": "KCorp KLG-575 WAP"
-        },
-        {
-            "host": "10.0.0.35",
+            "host": "10.0.1.1",
             "os": "Unknown"
         },
         {
-            "host": "10.0.0.76",
-            "os": "Citrix Access Gateway VPN gateway, Linksys WRT610Nv3 WAP"
-        },
-        {
-            "host": "10.0.0.125",
-            "os": "Unknown"
-        },
-        {
-            "host": "10.0.0.135",
-            "os": "Apple macOS 11 (Big Sur) - 13 (Ventura) or iOS 16 (Darwin 20.6.0 - 22.4.0)"
-        },
-        {
-            "host": "10.0.0.161",
-            "os": "Honeywell T5+ or T6 Thermostat, IKEA Tradfri Zigbee gateway"
-        },
-        {
-            "host": "10.0.0.186",
+            "host": "10.0.1.168",
             "os": "Microsoft Windows 10 1809 - 21H2"
         }
     ],
-    "scan_duration": "56.79 seconds"
+    "scan_duration": "16.59 seconds"
 }
