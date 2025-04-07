@@ -2,6 +2,7 @@ import pyshark
 import joblib
 import numpy as np
 import pandas as pd
+import time
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 import os
 import requests
@@ -26,40 +27,47 @@ NETWORK_INTERFACE = r"\Device\NPF_{46D9FA86-FE63-4E98-8BDD-D9D389631807}"
 # Original
 # r"\Device\NPF_{28DF2159-9CD6-475C-977B-40917DC2795C}"
 
+# Load whitelist
+try:
+    with open("whiteListDevice.txt", "r") as f:
+        whiteListIPs = set(line.strip() for line in f if line.strip())
+except FileNotFoundError:
+    print("[!] Whitelist file not found. Continuing without whitelist.")
+    whiteListIPs = set()
+
 # Function to safely transform ports (handles unseen values)
-def transform_port(port):
-    """Encodes port number, returns -1 if unseen."""
-    port_str = str(port)
-    return label_encoder.transform([port_str])[0] if port_str in label_encoder.classes_ else -1
+def transformPort(port):
+    portStr = str(port)
+    return labelEncoder.transform([portStr])[0] if portStr in labelEncoder.classes_ else -1
 
 # Function to safely transform protocol (handles unseen values)
-def transform_protocol(protocol):
-    """Encodes protocol, returns -1 if unseen."""
-    protocol_str = str(protocol)
-    return label_encoder.transform([protocol_str])[0] if protocol_str in label_encoder.classes_ else -1
+def transformProtocol(protocol):
+    protocolStr = str(protocol)
+    return labelEncoder.transform([protocolStr])[0] if protocolStr in labelEncoder.classes_ else -1
 
-def extract_features(packet):
+# Extract features from a packet
+def extractFeatures(packet):
     try:
         if not hasattr(packet, 'transport_layer'):
-            return None, None
+            return None, None, None, None, None
 
-        src_port = int(packet[packet.transport_layer].srcport) if hasattr(packet, 'tcp') or hasattr(packet, 'udp') else 0
-        dst_port = int(packet[packet.transport_layer].dstport) if hasattr(packet, 'tcp') or hasattr(packet, 'udp') else 0
+        srcIp = packet.ip.src if hasattr(packet, 'ip') else "N/A"
+        dstIp = packet.ip.dst if hasattr(packet, 'ip') else "N/A"
+        srcPort = int(packet[packet.transport_layer].srcport) if hasattr(packet, 'tcp') or hasattr(packet, 'udp') else 0
+        dstPort = int(packet[packet.transport_layer].dstport) if hasattr(packet, 'tcp') or hasattr(packet, 'udp') else 0
         length = int(packet.length) if hasattr(packet, 'length') else 0
-        flow_duration = 0
+        flowDuration = 0
         protocol = str(packet.transport_layer) if hasattr(packet, 'transport_layer') else "UNKNOWN"
 
-        # Encode
-        src_port_encoded = transform_port(src_port)
-        dst_port_encoded = transform_port(dst_port)
-        protocol_encoded = transform_protocol(protocol)
+        srcPortEncoded = transformPort(srcPort)
+        dstPortEncoded = transformPort(dstPort)
+        protocolEncoded = transformProtocol(protocol)
 
-        features = pd.DataFrame([[length, src_port_encoded, dst_port_encoded, flow_duration, protocol_encoded]],
+        features = pd.DataFrame([[length, srcPortEncoded, dstPortEncoded, flowDuration, protocolEncoded]],
                                 columns=["Length", "Source Port", "Destination Port", "Flow Duration", "Protocol"])
         features = scaler.transform(features)
 
-        # Manually construct Info-like summary
-        info_text = f"{src_port} → {dst_port} [{protocol}] Length={length}"
+        infoText = f"{srcIp}:{srcPort} → {dstIp}:{dstPort} [{protocol}] Length={length}"
         if hasattr(packet, 'tcp') and hasattr(packet.tcp, 'flags_ack'):
             flags = []
             if hasattr(packet.tcp, 'flags_syn') and packet.tcp.flags_syn == '1':
@@ -68,37 +76,58 @@ def extract_features(packet):
                 flags.append("ACK")
             if hasattr(packet.tcp, 'flags_fin') and packet.tcp.flags_fin == '1':
                 flags.append("FIN")
-            flag_str = "|".join(flags)
-            info_text += f" [{flag_str}]" if flag_str else ""
+            flagStr = "|".join(flags)
+            infoText += f" [{flagStr}]" if flagStr else ""
 
             if hasattr(packet.tcp, 'seq') and hasattr(packet.tcp, 'ack'):
-                info_text += f" Seq={packet.tcp.seq} Ack={packet.tcp.ack}"
+                infoText += f" Seq={packet.tcp.seq} Ack={packet.tcp.ack}"
 
-        return features, info_text
+        return features, infoText, srcIp, dstIp, length
     except Exception as e:
         print(f"Error processing packet: {e}")
-        return None, None
+        return None, None, None, None, None
 
-# Function to capture and classify packets in real-time
-def capture_live_traffic():
+# Real-time packet classification
+def captureLiveTraffic():
     print("[+] Starting real-time network traffic capture...")
-    capture = pyshark.LiveCapture(interface=NETWORK_INTERFACE)
+
+    maliciousLengths = {}  # length: timestamp
+    TIME_WINDOW = 20  # seconds
+
+    capture = pyshark.LiveCapture(interface=networkInterface)
 
     for packet in capture:
-        features, info_text = extract_features(packet)
+        features, infoText, srcIp, dstIp, lengthValue = extractFeatures(packet)
         if features is not None:
-            prediction = log_reg_model.predict(features)
-            result = "Malicious" if prediction[0] == 1 else "Normal Traffic"
+            currentTime = time.time()
 
-            print(f"[+] Classification: {result} | Info: {info_text}")
+            # Remove expired malicious lengths
+            expired = [l for l, t in maliciousLengths.items() if currentTime - t > TIME_WINDOW]
+            for l in expired:
+                del maliciousLengths[l]
+
+            if srcIp in whiteListIPs or srcIp == "N/A":
+                result = "Normal Traffic (Whitelisted or No Source IP)"
+            elif lengthValue in maliciousLengths:
+                result = "Malicious (Length Recently Flagged)"
+            else:
+                prediction = logRegModel.predict(features)
+                if prediction[0] == 1:
+                    result = "Malicious"
+                    if lengthValue is not None:
+                        maliciousLengths[lengthValue] = currentTime
+                else:
+                    result = "Normal Traffic"
+
+            print(f"[+] Classification: {result} | Info: {infoText} | Source IP: {srcIp} | Destination IP: {dstIp}")
 
             # Notify Flask server
             if result == "Malicious":
-                try:
-                    requests.post("http://127.0.0.1:5000/trigger-malware", json={"info": info_text})
-                except Exception as e:
-                    print(f"[!] Failed to notify: {e}")
+               try:
+                  requests.post("http://127.0.0.1:5000/trigger-malware", json={"info": info_text})
+               except Exception as e:
+                  print(f"[!] Failed to notify: {e}")
 
 # Run the live capture function
 if __name__ == "__main__":
-    capture_live_traffic()
+    captureLiveTraffic()
