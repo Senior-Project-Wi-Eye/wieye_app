@@ -31,7 +31,7 @@ class WieyeApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlueAccent),
       ),
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(title: "Wi-Eye"),
+      home: HomeScreen(title: ""),
     );
   }
 }

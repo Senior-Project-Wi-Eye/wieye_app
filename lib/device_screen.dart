@@ -145,6 +145,26 @@ class _DeviceScreenState extends State<DeviceScreen> {
               },
               child: const Text('Scan'),
             ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop(); // Close the dialog
+                final response = await http.post(
+                  Uri.parse('http://10.15.159.179:5000/block-device'),
+                  headers: {'Content-Type': 'application/json'},
+                  body: jsonEncode({'ip': device['ip']}),
+                );
+
+                final resBody = jsonDecode(response.body);
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: Text(response.statusCode == 200 ? 'Blocked' : 'Error'),
+                    content: Text(resBody['status'] ?? resBody['error'] ?? 'Unknown result'),
+                  ),
+                );
+              },
+              child: const Text('Block'),
+            ),
           ],
         );
       },

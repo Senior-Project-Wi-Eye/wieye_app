@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'main.dart';
+import 'dart:convert';
 import 'noti_history.dart';
 import 'noti_service.dart';
 import 'device_screen.dart';
@@ -15,26 +18,75 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
+  List<String> _logs = [];
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
-  // List of screen
-  static final List<Widget> _screens = <Widget>[
-    const Center(child: Text('Home Screen')),
-    const DeviceScreen(title: "Devices"),
-  ];
 
   @override
   void initState() {
     super.initState();
-    // Set context after the first build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       globalNotiService.setContext(context);
+      _startLogPolling();
     });
   }
+
+  void _startLogPolling() {
+    Timer.periodic(Duration(seconds: 2), (timer) async {
+      final res = await http.get(Uri.parse('http://10.15.159.179:5000/scan-log'));
+      if (res.statusCode == 200) {
+        final List<dynamic> jsonLogs = jsonDecode(res.body);
+        setState(() {
+          _logs = List<String>.from(jsonLogs.reversed);
+        });
+      }
+    });
+  }
+
+  Widget _buildScanLogScreen() {
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Live Scan Log",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              padding: const EdgeInsets.all(10),
+              child: ListView.builder(
+                itemCount: _logs.length,
+                reverse: true,
+                itemBuilder: (context, index) {
+                  return Text(
+                    _logs[index],
+                    style: const TextStyle(
+                      color: Colors.greenAccent,
+                      fontFamily: 'monospace',
+                      fontSize: 13,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -61,21 +113,9 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Wrap the screen in Expanded to take up available space
             Expanded(
-              child: _screens[_selectedIndex], // Your existing screen widget
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                // Wait for initialization to complete before showing notification
-                if (NotiService().isInitialized) {
-                  globalNotiService.showNotification(
-                    title: "Wi-Eye",
-                    body: "Warning Malware Detected!",
-                  );
-                } else {
-                  print("Notification plugin not initialized yet!");
-                }
-              },
-              child: const Text("Send Notification"),
+              child: _selectedIndex == 0
+                  ? _buildScanLogScreen()
+                  : const DeviceScreen(title: "Devices"),
             ),
           ],
         ),

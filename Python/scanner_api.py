@@ -2,10 +2,13 @@ from flask import Flask, request, jsonify
 import detailedScan
 import OSScan
 import quickIPScan
+import networkManagement
+from logger import log_event, scan_log
 import os
 import threading
 import signal
 import sys
+
 
 # Run on two termials
 # C:\Users\tyler\StudioProjects\wieye_app\Python\scanner_api.py
@@ -21,7 +24,6 @@ def start_background_scans():
     # 10.0.1.0/24
     threading.Thread(target=OSScan.constantOSScan, args=("10.15.159.179",), daemon=True).start()
     threading.Thread(target=quickIPScan.constantPingScan, args=("10.15.159.179",), daemon=True).start()
-
 
 @app.route('/scan', methods=['POST'])
 def scan_device():
@@ -87,6 +89,24 @@ def get_all_results():
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/block-device', methods=['POST'])
+def block_device():
+    data = request.json
+    ip = data.get('ip')
+
+    if not ip:
+        return jsonify({'error': 'Missing IP'}), 400
+
+    try:
+        networkManagement.blockUser(ip)
+        return jsonify({'status': 'Device blocked successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/scan-log', methods=['GET'])
+def get_scan_log():
+    return jsonify(scan_log)
 
 def graceful_shutdown(signal_received, frame):
     print("\n[INFO] Stopping background scans & shutting down Flask server...")

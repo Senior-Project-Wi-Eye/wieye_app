@@ -3,6 +3,7 @@ import json
 import sys
 import time
 import os
+from logger import log_event
 
 def run_ping_scan(target):
     command = ["nmap", "-sP", target]
@@ -18,6 +19,7 @@ def run_ping_scan(target):
         
         scan_duration = end_time - start_time
         print(f"Ping scan completed in {scan_duration:.2f} seconds.")
+        log_event(f"Ping scan completed in {scan_duration:.2f} seconds.")
         
         return result.stdout, scan_duration
     except Exception as e:
@@ -52,10 +54,12 @@ def save_results(scan_results, scan_duration): # Save result to a JSON file
     with open(filename, 'w') as file:
         json.dump(scan_results, file, indent=4)
     print(f"Ping scan results saved to {filename}")
+    log_event(f"Ping scan results saved")
 
 def pingScan(networkIP):
     target = networkIP
     print("Scanning for IPs...")
+    log_event("Scanning for IPs...")
     output, scan_duration = run_ping_scan(target)
     scan_results = parse_nmap_output(output)
     save_results(scan_results, scan_duration)

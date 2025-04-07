@@ -12,6 +12,7 @@ class NotiService {
   bool get isInitialized => _isInitialized;
 
   BuildContext? _context;
+  BuildContext? get context => _context;
   Timer? _malwareTimer;
 
   final List<MalwareNotification> _notificationHistory = [];
