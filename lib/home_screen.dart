@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'main.dart';
 import 'dart:convert';
 import 'noti_history.dart';
-import 'noti_service.dart';
 import 'device_screen.dart';
 
 class HomeScreen extends StatefulWidget {
