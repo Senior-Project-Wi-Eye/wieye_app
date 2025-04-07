@@ -13,16 +13,16 @@ MODEL_PATH = os.path.join(BASE_DIR, "ping_scan_detection_model.pkl")
 SCALER_PATH = os.path.join(BASE_DIR, "scaler.pkl")
 ENCODER_PATH = os.path.join(BASE_DIR, "label_encoder.pkl")
 
-log_reg_model = joblib.load(MODEL_PATH)
+logRegModel = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
-label_encoder = joblib.load(ENCODER_PATH)
+labelEncoder = joblib.load(ENCODER_PATH)
 
 #log_reg_model = joblib.load("ping_scan_detection_model.pkl")
 #scaler = joblib.load("scaler.pkl")
 #label_encoder = joblib.load("label_encoder.pkl")
 
 # Define the network interface for packet capture
-NETWORK_INTERFACE = r"\Device\NPF_{46D9FA86-FE63-4E98-8BDD-D9D389631807}"
+networkInterface = r"\Device\NPF_{46D9FA86-FE63-4E98-8BDD-D9D389631807}"
 
 # Original
 # r"\Device\NPF_{28DF2159-9CD6-475C-977B-40917DC2795C}"
@@ -124,7 +124,7 @@ def captureLiveTraffic():
             # Notify Flask server
             if result == "Malicious":
                try:
-                  requests.post("http://127.0.0.1:5000/trigger-malware", json={"info": info_text})
+                  requests.post("http://127.0.0.1:5000/trigger-malware", json={"info": infoText})
                except Exception as e:
                   print(f"[!] Failed to notify: {e}")
 
