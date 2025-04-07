@@ -2,6 +2,7 @@ import subprocess
 import json
 import sys
 import time
+from networkManagement import blockUser
 import os
 from logger import log_event
 def run_osscan(target):
@@ -66,6 +67,29 @@ def osscan(IPAddress):
     output, scan_duration = run_osscan(target)
     scan_results = parse_osscan_output(output)
     save_results(scan_results, scan_duration)
+    process_os_results()
+
+def process_os_results():
+    # Open and load the JSON data
+    with open("../lib/OSResult.json", 'r') as file:
+        data = json.load(file)
+
+    # Define allowed OS patterns
+    allowed_keywords = ["Windows 10", "Unknown"]
+
+    # Block any host whose OS is NOT in the allowed list
+    for host in data.get("hosts", []):
+        os_info = host.get("os", "")
+        if not any(keyword.lower() in os_info.lower() for keyword in allowed_keywords):
+            # Ensure the 'host' key is correct (contains the IP)
+            ip_address = host["host"]
+            print(f"Blocking IP: {host['host']}")
+            blockUser(ip_address)
+            osscan("10.0.1.0/24")
+
+    return data
+
+
 
 def constantOSScan(IPAddress):
     while True:

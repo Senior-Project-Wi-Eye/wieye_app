@@ -1,4 +1,13 @@
 {
-    "hosts": [],
-    "scan_duration": "1.60 seconds"
+    "hosts": [
+        {
+            "host": "10.0.1.1",
+            "os": "Unknown"
+        },
+        {
+            "host": "10.0.1.168",
+            "os": "Microsoft Windows 10 1809 - 21H2"
+        }
+    ],
+    "scan_duration": "16.59 seconds"
 }
