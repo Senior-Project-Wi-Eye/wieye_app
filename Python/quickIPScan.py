@@ -64,9 +64,33 @@ def pingScan(networkIP):
     scan_results = parse_nmap_output(output)
     save_results(scan_results, scan_duration)
 
+def detect_new_devices(current_hosts, previous_hosts):
+    current_ips = {host["host"] for host in current_hosts}
+    new_ips = current_ips - previous_hosts
+
+    for ip in new_ips:
+        message = f"New device detected: {ip}"
+        print(message)
+        log_event(message)
+
+    return current_ips
+
 def constantPingScan(networkIP):
+    previous_hosts = set()
+
     while True:
-        pingScan(networkIP)
+        output, scan_duration = run_ping_scan(networkIP)
+        scan_results = parse_nmap_output(output)
+        current_hosts = scan_results["hosts"]
+
+        # Detect new devices
+        previous_hosts = detect_new_devices(current_hosts, previous_hosts)
+
+        # Save results
+        save_results(scan_results, scan_duration)
+
+        time.sleep(15)
+
 
 if __name__ == "__main__":
     constantPingScan("10.0.1.0/24")
