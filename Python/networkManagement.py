@@ -90,10 +90,7 @@ def blockUser(ipaddress):
     block_mac_address(mac.replace(":", ""))
     
 def main():
-    blockUser("10.0.1.160")
+    blockUser("10.0.1.172")
 
 if __name__ == "__main__":
     main()
-
-# //*[@id="app"]/div/div/div[2]/div/div[2]/div[1]/div/div[1]/div/div/div/div/div/div[2]/form/div[2]/div[3]/div[1]/div[2]/div/div[1]/div/table/tbody/tr[1]/td[4]/div/div/div/div/span/span/svg
-# //*[@id="app"]/div/div/div[2]/div/div[2]/div[1]/div/div[1]/div/div/div/div/div/div[2]/form/div[2]/div[3]/div[1]/div[2]/div/div[1]/div/table/tbody/tr[2]/td[4]/div/div/div/div/span/span/svg

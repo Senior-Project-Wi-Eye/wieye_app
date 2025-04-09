@@ -5,7 +5,15 @@
             "status": "up"
         },
         {
-            "host": "10.0.1.172",
+            "host": "10.0.1.80",
+            "status": "up"
+        },
+        {
+            "host": "10.0.1.121",
+            "status": "up"
+        },
+        {
+            "host": "10.0.1.203",
             "status": "up"
         },
         {
@@ -17,5 +25,5 @@
             "status": "up"
         }
     ],
-    "scan_duration": "2.78 seconds"
+    "scan_duration": "4.36 seconds"
 }
