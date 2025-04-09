@@ -7,7 +7,7 @@ import traceback
 from sklearn.preprocessing import StandardScaler
 import os
 import requests
-from ..Python import networkManagement
+from Python.networkManagement import blockUser
 
 # Load the trained model and preprocessing tools
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -141,7 +141,7 @@ def captureLiveTraffic():
         if prediction[0] == 1:
             maliciousLengths[lengthValue] = currentTime
             result = "Malicious"
-            networkManagement.blockUser(srcIp)
+            blockUser(srcIp)
         else:
             result = "Normal Traffic"
 
