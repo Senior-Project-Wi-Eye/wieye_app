@@ -5,7 +5,7 @@ scan_log = []
 
 def log_event(msg):
     timestamped = f"[{datetime.now().strftime('%H:%M:%S')}] {msg}"
-    print(timestamped)
+    # print(timestamped)
     scan_log.append(timestamped)
     if len(scan_log) > 50:
         scan_log.pop(0)

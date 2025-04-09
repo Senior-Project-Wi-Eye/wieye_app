@@ -11,7 +11,7 @@ class NotificationHistoryScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Notification History')),
       body: notifications.isEmpty
-          ? const Center(child: Text('No malware alerts yet.'))
+          ? const Center(child: Text('No alerts yet.'))
           : ListView.builder(
         itemCount: notifications.length,
         itemBuilder: (context, index) {

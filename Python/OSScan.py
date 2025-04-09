@@ -71,7 +71,8 @@ def osscan(IPAddress):
 
 def process_os_results():
     # Open and load the JSON data
-    with open("../lib/OSResult.json", 'r') as file:
+    os_result_path = os.path.join(os.path.dirname(__file__), '..', '..', 'wieye_app', 'lib', 'OSResult.json')
+    with open(os.path.abspath(os_result_path), 'r') as file:
         data = json.load(file)
 
     # Define allowed OS patterns

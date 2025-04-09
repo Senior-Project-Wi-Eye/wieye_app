@@ -19,11 +19,13 @@ app = Flask(__name__)
 malware_detected = False
 last_malware_info = ""
 
+
 def start_background_scans():
-    # change back if not on school wifi !!!!
+    # change back if not on school wifi !!!! 10.15.159.179
     # 10.0.1.0/24
-    threading.Thread(target=OSScan.constantOSScan, args=("10.15.159.179",), daemon=True).start()
-    threading.Thread(target=quickIPScan.constantPingScan, args=("10.15.159.179",), daemon=True).start()
+
+    threading.Thread(target=OSScan.constantOSScan, args=("10.0.1.0/24",), daemon=True).start()
+    threading.Thread(target=quickIPScan.constantPingScan, args=("10.0.1.0/24",), daemon=True).start()
 
 @app.route('/scan', methods=['POST'])
 def scan_device():
@@ -67,6 +69,19 @@ def trigger_malware():
     last_malware_info = data.get('info', 'Suspicious Traffic Detected')
     return jsonify({"status": "alert triggered"})
 
+
+@app.route('/trigger-notification', methods=['POST'])
+def trigger_custom_notification():
+    data = request.json
+    title = data.get("title", "Alert")
+    body = data.get("body", "")
+
+    custom_notifications.append({
+        "title": title,
+        "body": body,
+        "timestamp": time.time()
+    })
+
 @app.route('/get-all-results', methods=['GET'])
 def get_all_results():
     try:
@@ -107,6 +122,10 @@ def block_device():
 @app.route('/scan-log', methods=['GET'])
 def get_scan_log():
     return jsonify(scan_log)
+
+@app.route('/notification-feed', methods=['GET'])
+def get_custom_notifications():
+    return jsonify(custom_notifications)
 
 def graceful_shutdown(signal_received, frame):
     print("\n[INFO] Stopping background scans & shutting down Flask server...")

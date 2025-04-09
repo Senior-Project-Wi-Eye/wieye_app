@@ -9,21 +9,14 @@
             "status": "up"
         },
         {
-            "host": "10.0.1.121",
+            "host": "10.0.1.186",
             "status": "up"
         },
         {
             "host": "10.0.1.203",
             "status": "up"
-        },
-        {
-            "host": "10.0.1.168",
-            "status": "up"
-        },
-        {
-            "host": "10.0.1.186",
-            "status": "up"
         }
     ],
-    "scan_duration": "4.36 seconds"
+
+    "scan_duration": "2.48 seconds"
 }

@@ -5,9 +5,17 @@
             "os": "Unknown"
         },
         {
-            "host": "10.0.1.168",
+            "host": "10.0.1.80",
+            "os": "Unknown"
+        },
+        {
+            "host": "10.0.1.186",
+            "os": "Unknown"
+        },
+        {
+            "host": "10.0.1.203",
             "os": "Microsoft Windows 10 1809 - 21H2"
         }
     ],
-    "scan_duration": "16.59 seconds"
+    "scan_duration": "36.86 seconds"
 }
