@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'home_screen.dart';
+import 'current_user.dart';
 // IneedaPaswword24
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +15,20 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+
+  Future<String?> fetchUserEmail(String accessToken) async {
+    final res = await http.get(
+      Uri.parse('https://dev-63654183.okta.com/oauth2/default/v1/userinfo'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (res.statusCode == 200) {
+      final userInfo = json.decode(res.body);
+      return userInfo['email'];
+    }
+
+    return null;
+  }
 
   Future<void> _login() async {
     setState(() {
@@ -52,10 +67,18 @@ class _LoginScreenState extends State<LoginScreen> {
       // Check if the access token is present
       if (data['access_token'] != null) {
         print("Access Token: ${data['access_token']}");
+
+        final email = await fetchUserEmail(data['access_token']);
+        if (email != null) {
+          currentUserEmail = email;
+          print("Logged in as: $currentUserEmail");
+        }
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomeScreen(title: "Home")),
         );
+
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("No access token found")),

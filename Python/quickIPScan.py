@@ -73,6 +73,15 @@ def detect_new_devices(current_hosts, previous_hosts):
         print(message)
         log_event(message)
 
+        # Send notification to Flask
+   #     try:
+    #        requests.post("http://127.0.0.1:5000/trigger-notification", json={
+     #           "title": "New Device Connected",
+      #          "body": message
+       #     })
+        #except Exception as e:
+         #   print(f"[!] Failed to notify frontend: {e}")
+
     return current_ips
 
 def constantPingScan(networkIP):

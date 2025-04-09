@@ -3,7 +3,8 @@ import joblib
 import numpy as np
 import pandas as pd
 import time
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+import traceback
+from sklearn.preprocessing import StandardScaler
 import os
 import requests
 
@@ -11,64 +12,86 @@ import requests
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "ping_scan_detection_model.pkl")
 SCALER_PATH = os.path.join(BASE_DIR, "scaler.pkl")
-ENCODER_PATH = os.path.join(BASE_DIR, "label_encoder.pkl")
+ENCODER_PATH = os.path.join(BASE_DIR, "label_encoders.pkl")
 
 logRegModel = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
-labelEncoder = joblib.load(ENCODER_PATH)
+encoders = joblib.load(ENCODER_PATH)
 
 #log_reg_model = joblib.load("ping_scan_detection_model.pkl")
 #scaler = joblib.load("scaler.pkl")
 #label_encoder = joblib.load("label_encoder.pkl")
 
 # Define the network interface for packet capture
-networkInterface = r"\Device\NPF_{46D9FA86-FE63-4E98-8BDD-D9D389631807}"
+networkInterface = r"\Device\NPF_{1907CCC3-8ED0-49B7-B222-C6E87C9D2899}"
+#networkInterface = r"\Device\NPF_{46D9FA86-FE63-4E98-8BDD-D9D389631807}"
 
 # Original
 # r"\Device\NPF_{28DF2159-9CD6-475C-977B-40917DC2795C}"
 
-# Load whitelist
+
+# Load whitelist IPs
 try:
-    with open("whiteListDevice.txt", "r") as f:
+    with open(os.path.join(BASE_DIR,"whiteListDevice.txt"), "r") as f:
         whiteListIPs = set(line.strip() for line in f if line.strip())
 except FileNotFoundError:
     print("[!] Whitelist file not found. Continuing without whitelist.")
     whiteListIPs = set()
 
-# Function to safely transform ports (handles unseen values)
-def transformPort(port):
-    portStr = str(port)
-    return labelEncoder.transform([portStr])[0] if portStr in labelEncoder.classes_ else -1
-
-# Function to safely transform protocol (handles unseen values)
-def transformProtocol(protocol):
-    protocolStr = str(protocol)
-    return labelEncoder.transform([protocolStr])[0] if protocolStr in labelEncoder.classes_ else -1
+# Helper: safe encoding
+def safeEncode(value, encoder):
+    valStr = str(value)
+    return encoder.transform([valStr])[0] if valStr in encoder.classes_ else -1
 
 # Extract features from a packet
 def extractFeatures(packet):
     try:
-        if not hasattr(packet, 'transport_layer'):
-            return None, None, None, None, None
-
-        srcIp = packet.ip.src if hasattr(packet, 'ip') else "N/A"
-        dstIp = packet.ip.dst if hasattr(packet, 'ip') else "N/A"
-        srcPort = int(packet[packet.transport_layer].srcport) if hasattr(packet, 'tcp') or hasattr(packet, 'udp') else 0
-        dstPort = int(packet[packet.transport_layer].dstport) if hasattr(packet, 'tcp') or hasattr(packet, 'udp') else 0
+        srcIp = "N/A"
+        dstIp = "N/A"
+        srcPort = 0
+        dstPort = 0
         length = int(packet.length) if hasattr(packet, 'length') else 0
         flowDuration = 0
-        protocol = str(packet.transport_layer) if hasattr(packet, 'transport_layer') else "UNKNOWN"
+        protocol = "UNKNOWN"
 
-        srcPortEncoded = transformPort(srcPort)
-        dstPortEncoded = transformPort(dstPort)
-        protocolEncoded = transformProtocol(protocol)
+        # Handle IP packets
+        if hasattr(packet, 'ip'):
+            srcIp = packet.ip.src
+            dstIp = packet.ip.dst
+            protocol = str(packet.transport_layer) if hasattr(packet, 'transport_layer') and packet.transport_layer else "UNKNOWN"
+            if packet.transport_layer:
+                try:
+                    srcPort = int(packet[packet.transport_layer].srcport)
+                    dstPort = int(packet[packet.transport_layer].dstport)
+                except (AttributeError, ValueError):
+                    srcPort = 0
+                    dstPort = 0
+
+        # Handle ARP packets
+        elif hasattr(packet, 'arp'):
+            srcIp = packet.arp.src_proto_ipv4
+            dstIp = packet.arp.dst_proto_ipv4
+            protocol = "ARP"
+
+        # Skip if IPs are invalid or whitelisted
+        if (
+                srcIp == "N/A" or dstIp == "N/A" or
+                srcIp in whiteListIPs or dstIp in whiteListIPs
+        ):
+            return None, None, None, None, None
+
+        # Encode features
+        srcPortEncoded = safeEncode(srcPort, encoders["Source Port"])
+        dstPortEncoded = safeEncode(dstPort, encoders["Destination Port"])
+        protocolEncoded = safeEncode(protocol, encoders["Protocol"])
 
         features = pd.DataFrame([[length, srcPortEncoded, dstPortEncoded, flowDuration, protocolEncoded]],
                                 columns=["Length", "Source Port", "Destination Port", "Flow Duration", "Protocol"])
         features = scaler.transform(features)
 
+        # Build info text
         infoText = f"{srcIp}:{srcPort} → {dstIp}:{dstPort} [{protocol}] Length={length}"
-        if hasattr(packet, 'tcp') and hasattr(packet.tcp, 'flags_ack'):
+        if hasattr(packet, 'tcp'):
             flags = []
             if hasattr(packet.tcp, 'flags_syn') and packet.tcp.flags_syn == '1':
                 flags.append("SYN")
@@ -76,58 +99,59 @@ def extractFeatures(packet):
                 flags.append("ACK")
             if hasattr(packet.tcp, 'flags_fin') and packet.tcp.flags_fin == '1':
                 flags.append("FIN")
-            flagStr = "|".join(flags)
-            infoText += f" [{flagStr}]" if flagStr else ""
-
+            if flags:
+                infoText += f" [{'|'.join(flags)}]"
             if hasattr(packet.tcp, 'seq') and hasattr(packet.tcp, 'ack'):
                 infoText += f" Seq={packet.tcp.seq} Ack={packet.tcp.ack}"
 
         return features, infoText, srcIp, dstIp, length
     except Exception as e:
         print(f"Error processing packet: {e}")
+        traceback.print_exc()
         return None, None, None, None, None
 
-# Real-time packet classification
+# Capture and classify live traffic
 def captureLiveTraffic():
     print("[+] Starting real-time network traffic capture...")
 
-    maliciousLengths = {}  # length: timestamp
-    TIME_WINDOW = 20  # seconds
+    maliciousLengths = {}  # length → timestamp
+    TIME_WINDOW = 10  # seconds
 
     capture = pyshark.LiveCapture(interface=networkInterface)
 
     for packet in capture:
         features, infoText, srcIp, dstIp, lengthValue = extractFeatures(packet)
-        if features is not None:
-            currentTime = time.time()
+        if features is None:
+            continue
 
-            # Remove expired malicious lengths
-            expired = [l for l, t in maliciousLengths.items() if currentTime - t > TIME_WINDOW]
-            for l in expired:
-                del maliciousLengths[l]
+        currentTime = time.time()
 
-            if srcIp in whiteListIPs or srcIp == "N/A":
-                result = "Normal Traffic (Whitelisted or No Source IP)"
-            elif lengthValue in maliciousLengths:
-                result = "Malicious (Length Recently Flagged)"
-            else:
-                prediction = logRegModel.predict(features)
-                if prediction[0] == 1:
-                    result = "Malicious"
-                    if lengthValue is not None:
-                        maliciousLengths[lengthValue] = currentTime
-                else:
-                    result = "Normal Traffic"
+        # Remove expired lengths
+        expired = [l for l, t in maliciousLengths.items() if currentTime - t > TIME_WINDOW]
+        for l in expired:
+            del maliciousLengths[l]
 
-            print(f"[+] Classification: {result} | Info: {infoText} | Source IP: {srcIp} | Destination IP: {dstIp}")
+        # SKIP EVERYTHING if length was flagged recently
+        if lengthValue in maliciousLengths:
+            continue
 
-            # Notify Flask server
-            if result == "Malicious":
-               try:
-                  requests.post("http://127.0.0.1:5000/trigger-malware", json={"info": infoText})
-               except Exception as e:
-                  print(f"[!] Failed to notify: {e}")
+        # Only predict if not recently flagged
+        prediction = logRegModel.predict(features)
+        if prediction[0] == 1:
+            maliciousLengths[lengthValue] = currentTime
+            result = "Malicious"
+        else:
+            result = "Normal Traffic"
 
-# Run the live capture function
+        print(f"[+] Classification: {result} | {infoText}")
+
+        # Notify Flask server
+        if result == "Malicious":
+            try:
+                requests.post("http://127.0.0.1:5000/trigger-malware", json={"info": infoText})
+            except Exception as e:
+                print(f"[!] Failed to notify: {e}")
+
+# Entry point
 if __name__ == "__main__":
     captureLiveTraffic()

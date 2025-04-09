@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'current_user.dart';
 
 class NotiService {
   final notificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -15,9 +16,12 @@ class NotiService {
   BuildContext? get context => _context;
   Timer? _malwareTimer;
 
-  final List<MalwareNotification> _notificationHistory = [];
+  final Map<String, List<MalwareNotification>> _userHistories = {};
 
-  List<MalwareNotification> get notificationHistory => _notificationHistory;
+  List<MalwareNotification> get notificationHistory {
+    final user = currentUserEmail ?? 'guest';
+    return _userHistories[user] ?? [];
+  }
 
   void setContext(BuildContext context) {
     _context = context;
@@ -68,10 +72,21 @@ class NotiService {
       try {
         final res = await http.get(Uri.parse('http://10.15.159.179:5000/malware-alert'));
         final data = jsonDecode(res.body);
+
+        // Check for attack notifications
         if (data["malware"] == true) {
           final String info = data["info"] ?? "Malicious Traffic Detected!";
           showNotification(title: "Malware Detected", body: info);
         }
+
+        // Check for new devices or other custom notifications
+        final deviceRes = await http.get(Uri.parse('http://10.15.159.179:5000/notification-feed'));
+        final List<dynamic> alerts = jsonDecode(deviceRes.body);
+
+        for (var alert in alerts) {
+          showNotification(title: alert["title"], body: alert["body"]);
+        }
+
       } catch (e) {
         print("Failed to check malware alert: $e");
       }
@@ -96,14 +111,15 @@ class NotiService {
 
     // Save to history (common to all platforms)
     if (title != null && body != null) {
-      _notificationHistory.add(
-        MalwareNotification(
-          title: title,
-          body: body,
-          timestamp: DateTime.now(),
-        ),
+      final user = currentUserEmail ?? 'guest';
+      final noti = MalwareNotification(
+        title: title,
+        body: body,
+        timestamp: DateTime.now(),
       );
+      _userHistories.putIfAbsent(user, () => []).add(noti);
     }
+
 
     if (Platform.isAndroid) {
       // Android notification
