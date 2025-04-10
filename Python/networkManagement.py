@@ -126,9 +126,16 @@ def blockUser(ipaddress):
     if not devices:
         print("No devices found.")
         return
+
     mac = get_mac_address(ipaddress, devices)
+
+    if mac == "MAC address not found":
+        print(f"MAC address for IP {ipaddress} not found. Aborting block operation. Please try again.")
+        return
+
     block_mac_address(mac.replace(":", ""))
     save_results(mac)
+
     
 def unblockUser(mac):
     options = webdriver.ChromeOptions()
