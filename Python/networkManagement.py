@@ -33,12 +33,16 @@ def show_devices(devices):
     print()
 
 def block_mac_address(mac_address):
-    # Set Chrome options
+     # Set Chrome options
     options = webdriver.ChromeOptions()
     options.add_experimental_option("detach", True)
     
-    # Launch Chrome with options
-    driver = webdriver.Chrome(options=options, service=ChromeService(ChromeDriverManager().install()))
+    # 👉 Insert your path to chromedriver.exe here
+    chromedriver_path = "wieye_app/Python/chromedriver-win64/chromedriver.exe"
+
+    # Launch Chrome with specified driver
+    driver = webdriver.Chrome(service=ChromeService(chromedriver_path), options=options)
+
     
     try:
         # Open the target page
@@ -138,11 +142,15 @@ def blockUser(ipaddress):
 
     
 def unblockUser(mac):
+    # Set Chrome options
     options = webdriver.ChromeOptions()
     options.add_experimental_option("detach", True)
     
-    # Launch Chrome with options
-    driver = webdriver.Chrome(options=options, service=ChromeService(ChromeDriverManager().install()))
+    # 👉 Insert your path to chromedriver.exe here
+    chromedriver_path = "wieye_app/Python/chromedriver-win64/chromedriver.exe"
+
+    # Launch Chrome with specified driver
+    driver = webdriver.Chrome(service=ChromeService(chromedriver_path), options=options)
     
     try:
         # Open the target page
@@ -250,8 +258,8 @@ def removeBlockedDeviceFromList(index_to_remove):
     return True
 
 def main():
-    # blockUser("10.0.1.41")
-    unblockUser("a6:5d:22:a7:04:eb")
+    # blockUser("10.0.1.172")
+    unblockUser("fe:53:a8:8d:21:e9")
     # devices = scan_network()
     # show_devices(devices)
 
