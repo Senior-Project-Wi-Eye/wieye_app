@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 import 'home_screen.dart';
 import 'current_user.dart';
 import 'noti_service.dart';
+
 // IneedaPaswword24
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,6 +32,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return null;
   }
+
+  void _launchURL(String url) async {
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Could not open URL")),
+      );
+    }
+  }
+
 
   Future<void> _login() async {
     setState(() {
@@ -120,6 +133,24 @@ class _LoginScreenState extends State<LoginScreen> {
                 : ElevatedButton(
               onPressed: _login,
               child: Text("Login"),
+            ),
+            const SizedBox(height: 10),
+
+            TextButton(
+              onPressed: () {
+                // Okta reset password URL
+                final forgotUrl = "https://dev-63654183.okta.com/signin/forgot-password";
+                _launchURL(forgotUrl);
+              },
+              child: const Text("Forgot Password?"),
+            ),
+            TextButton(
+              onPressed: () {
+                // Okta registration URL
+                final signupUrl = "https://dev-63654183.okta.com/signin/register";
+                _launchURL(signupUrl);
+              },
+              child: const Text("Create Account"),
             ),
           ],
         ),

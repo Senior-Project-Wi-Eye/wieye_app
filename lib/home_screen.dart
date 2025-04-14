@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'login_screen.dart';
 import 'main.dart';
 import 'dart:convert';
 import 'noti_history.dart';
@@ -110,6 +111,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 MaterialPageRoute(
                   builder: (context) => const NotificationHistoryScreen(),
                 ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(
+              Icons.logout,
+              color: Colors.lightBlueAccent,
+            ),
+            tooltip: 'Logout',
+            onPressed: () {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    (route) => false,
               );
             },
           ),
