@@ -7,19 +7,18 @@ from webdriver_manager.chrome import ChromeDriverManager
 from scapy.all import ARP, Ether, srp
 import os
 import json
-import requests
-
 
 def scan_network():
-    iface = "Ethernet 2"
-    network_range = "10.0.1.0/24"
-
-    print(f"Scanning network {network_range} on interface '{iface}'...")
+    network_range = "10.0.1.0/24"  # Modify if your network uses a different subnet
+    print(f"Scanning network {network_range}...")
     arp_request = ARP(pdst=network_range)
     broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
-    answered_list = srp(broadcast / arp_request, timeout=2, iface=iface, verbose=False)[0]
+    answered_list = srp(broadcast / arp_request, timeout=2, verbose=False)[0]
 
-    devices = {resp.psrc: resp.hwsrc for _, resp in answered_list}
+    devices = {}
+    for element in answered_list:
+        devices[element[1].psrc] = element[1].hwsrc
+
     return devices
 
 def get_mac_address(ip, devices):
@@ -37,10 +36,10 @@ def block_mac_address(mac_address):
     # Set Chrome options
     options = webdriver.ChromeOptions()
     options.add_experimental_option("detach", True)
-
+    
     # Launch Chrome with options
     driver = webdriver.Chrome(options=options, service=ChromeService(ChromeDriverManager().install()))
-
+    
     try:
         # Open the target page
         driver.get("http://10.0.1.1")
@@ -123,44 +122,17 @@ def save_results(mac_address):  # Save result to a JSON file with index
 
 def blockUser(ipaddress):
     devices = scan_network()
-
+    
     if not devices:
         print("No devices found.")
-
-        # Send custom notification
-        try:
-            requests.post(
-                "http://localhost:5000/trigger-notification",
-                json={
-                    "title": "Block Failed",
-                    "body": f"IP {ipaddress} not found. Could not block device."
-                }
-            )
-        except Exception as e:
-            print(f"Failed to send notification: {e}")
-
         return
 
     mac = get_mac_address(ipaddress, devices)
 
     if mac == "MAC address not found":
         print(f"MAC address for IP {ipaddress} not found. Aborting block operation. Please try again.")
-
-        # Send custom notification
-        try:
-            requests.post(
-                "http://localhost:5000/trigger-notification",
-                json={
-                    "title": "Block Failed",
-                    "body": f"MAC address for IP {ipaddress} not found. Could not block device."
-                }
-            )
-        except Exception as e:
-            print(f"Failed to send notification: {e}")
-
         return
 
-    print(mac)
     block_mac_address(mac.replace(":", ""))
     save_results(mac)
 
@@ -278,10 +250,10 @@ def removeBlockedDeviceFromList(index_to_remove):
     return True
 
 def main():
-    blockUser("10.0.1.168")
-    # unblockUser("a6:5d:22:a7:04:eb")
-    #  devices = scan_network()
-    #  show_devices(devices)
+    # blockUser("10.0.1.41")
+    unblockUser("a6:5d:22:a7:04:eb")
+    # devices = scan_network()
+    # show_devices(devices)
 
 if __name__ == "__main__":
     main()
