@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'home_screen.dart';
 import 'current_user.dart';
+import 'noti_service.dart';
 // IneedaPaswword24
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -72,11 +73,13 @@ class _LoginScreenState extends State<LoginScreen> {
         if (email != null) {
           currentUserEmail = email;
           print("Logged in as: $currentUserEmail");
+
+          await NotiService().loadUserHistory(currentUserEmail!);
         }
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomeScreen(title: "Home")),
+          MaterialPageRoute(builder: (context) => HomeScreen(title: "Wi-Eye")),
         );
 
       } else {
@@ -109,6 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _passwordController,
               decoration: InputDecoration(labelText: "Password"),
               obscureText: true,
+              onSubmitted: (_) => _login(),
             ),
             SizedBox(height: 20),
             _isLoading

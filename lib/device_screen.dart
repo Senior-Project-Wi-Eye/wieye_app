@@ -2,8 +2,11 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // To use rootBundle for loading assets
+import 'blocked_ds.dart';
+
 
 bool isScanning = false;
+
 
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({super.key, required this.title});
@@ -91,6 +94,22 @@ class _DeviceScreenState extends State<DeviceScreen> {
     }
   }
 
+  void _showLoadingDialog(BuildContext context, {String message = 'Loading...'}) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        content: Row(
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(width: 16),
+            Text(message),
+          ],
+        ),
+      ),
+    );
+  }
+
 
   @override
   void initState() {
@@ -140,19 +159,25 @@ class _DeviceScreenState extends State<DeviceScreen> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-                scanDevice(device['ip']);    // Trigger scan
+                Navigator.of(context).pop(); // Close device detail dialog
+                _showLoadingDialog(context, message: "Scanning...");
+                scanDevice(device['ip']);
               },
               child: const Text('Scan'),
             ),
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop(); // Close device detail dialog
+
+                // _showLoadingDialog(context, message: "Blocking..."); // <-- Commented out
+
                 final response = await http.post(
                   Uri.parse('http://10.15.159.179:5000/block-device'),
                   headers: {'Content-Type': 'application/json'},
                   body: jsonEncode({'ip': device['ip']}),
                 );
+
+                // Navigator.of(context).pop(); // <-- Commented out (remove closing of loading dialog)
 
                 final resBody = jsonDecode(response.body);
                 showDialog(
@@ -162,6 +187,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                     content: Text(resBody['status'] ?? resBody['error'] ?? 'Unknown result'),
                   ),
                 );
+                await loadData();
               },
               child: const Text('Block'),
             ),
@@ -174,11 +200,28 @@ class _DeviceScreenState extends State<DeviceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.block,
+              color: Colors.lightBlueAccent,
+            ),
+            tooltip: 'Blocked Devices',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BlockedDevicesScreen()),
+              );
+            },
+          ),
+        ],
+      ),
       body: devices.isEmpty
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: Text("No devices found or failed to load."))
           : ListView.builder(
-        itemCount: devices.length,
+      itemCount: devices.length,
         itemBuilder: (context, index) {
           var device = devices[index];
           // Determine the color based on the device status
@@ -212,8 +255,23 @@ class _DeviceScreenState extends State<DeviceScreen> {
         body: jsonEncode({'ip': ip}),
       );
 
+      Navigator.of(context).pop(); // ✅ Close loading
+
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
+
+        if (result['hosts'] == null || result['hosts'].isEmpty) {
+          Navigator.of(context, rootNavigator: true).pop();
+          showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: const Text("No Device Found"),
+              content: const Text("No matching device found during scan."),
+            ),
+          );
+          return;
+        }
+
         final newHost = result['hosts'][0];
 
         final updatedDevices = devices.map((device) {
@@ -236,7 +294,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: Text("Scan Complete"),
+            title: const Text("Scan Complete"),
             content: Text("Device ${newHost['host']} updated."),
           ),
         );
@@ -244,17 +302,19 @@ class _DeviceScreenState extends State<DeviceScreen> {
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: Text("Scan Failed"),
+            title: const Text("Scan Failed"),
             content: Text("Server error: ${response.body}"),
           ),
         );
       }
     } catch (e) {
+      Navigator.of(context).pop(); // ✅ Close loading on error
+
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
-          title: Text("Error"),
-          content: Text("Could not connect to scanner server."),
+          title: const Text("Error"),
+          content: const Text("Could not connect to scanner server."),
         ),
       );
     } finally {

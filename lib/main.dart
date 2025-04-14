@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'noti_service.dart';
 import 'login_screen.dart';
 import 'home_screen.dart';
+import 'current_user.dart';
 
 // Create a global instance that can be accessed anywhere
 final globalNotiService = NotiService();
@@ -11,6 +12,7 @@ void main() async {
 
   try {
     await globalNotiService.initNotification();
+    await NotiService().loadUserHistory(currentUserEmail ?? 'guest');
     print('Notification service initialized');
   } catch (e) {
     print('Error initializing notifications: $e');
@@ -31,7 +33,8 @@ class WieyeApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlueAccent),
       ),
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(title: ""),
+      home: const LoginScreen(),
+    //  home: HomeScreen(title: "Wi-Eye"),
     );
   }
 }

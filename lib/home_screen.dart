@@ -91,11 +91,20 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        backgroundColor: Color(0xFF0D1B2A),
+        title: Row(
+          children: [
+            Image.asset('assets/Icon-48.png', height: 30),
+            const SizedBox(width: 2),
+            Image.asset('assets/wordlogo.png', height: 25),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications),
+            icon: const Icon(
+              Icons.notifications,
+              color: Colors.lightBlueAccent,
+            ),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(

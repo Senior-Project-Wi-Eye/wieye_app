@@ -19,17 +19,12 @@ logRegModel = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
 encoders = joblib.load(ENCODER_PATH)
 
-#log_reg_model = joblib.load("ping_scan_detection_model.pkl")
-#scaler = joblib.load("scaler.pkl")
-#label_encoder = joblib.load("label_encoder.pkl")
-
 # Define the network interface for packet capture
 networkInterface = r"\Device\NPF_{1907CCC3-8ED0-49B7-B222-C6E87C9D2899}"
 #networkInterface = r"\Device\NPF_{46D9FA86-FE63-4E98-8BDD-D9D389631807}"
 
 # Original
 # r"\Device\NPF_{28DF2159-9CD6-475C-977B-40917DC2795C}"
-
 
 # Load whitelist IPs
 try:

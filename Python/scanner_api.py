@@ -8,6 +8,9 @@ import os
 import threading
 import signal
 import sys
+import logging
+import time
+import json
 
 
 # Run on two termials
@@ -16,16 +19,20 @@ import sys
 
 app = Flask(__name__)
 
+FLUTTER_LIB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'wieye_app', 'lib'))
+
 malware_detected = False
 last_malware_info = ""
-
+custom_notifications = []
 
 def start_background_scans():
     # change back if not on school wifi !!!! 10.15.159.179
     # 10.0.1.0/24
+    #bgIp = "10.0.1.0/24"
+    bgIp = "10.15.159.179"
 
-    threading.Thread(target=OSScan.constantOSScan, args=("10.0.1.0/24",), daemon=True).start()
-    threading.Thread(target=quickIPScan.constantPingScan, args=("10.0.1.0/24",), daemon=True).start()
+    threading.Thread(target=OSScan.constantOSScan, args=(bgIp,), daemon=True).start()
+    threading.Thread(target=quickIPScan.constantPingScan, args=(bgIp,), daemon=True).start()
 
 @app.route('/scan', methods=['POST'])
 def scan_device():
@@ -41,7 +48,6 @@ def scan_device():
         detailedScan.nmapScan(ip)
 
         # Read result JSON and return it
-        FLUTTER_LIB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'wieye_app', 'lib'))
         filename = os.path.join(FLUTTER_LIB_PATH, 'DetailedResult.json')
 
         if not os.path.exists(filename):
@@ -81,15 +87,21 @@ def trigger_custom_notification():
         "body": body,
         "timestamp": time.time()
     })
+    return jsonify({"status": "notification queued"})
+
+@app.route('/notification-feed', methods=['GET'])
+def get_custom_notifications():
+    global custom_notifications
+    to_send = custom_notifications.copy()
+    custom_notifications = []
+    return jsonify(to_send)
 
 @app.route('/get-all-results', methods=['GET'])
 def get_all_results():
     try:
-        FLUTTER_LIB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'wieye_app', 'lib'))
-
         def load_json(file_name):
-            file_path = os.path.join(FLUTTER_LIB_PATH, file_name)
-            with open(file_path, 'r') as f:
+            filename = os.path.join(FLUTTER_LIB_PATH, file_name)
+            with open(filename, 'r') as f:
                 return f.read()
 
         ip_result = load_json('IPResult.json')
@@ -109,30 +121,64 @@ def get_all_results():
 def block_device():
     data = request.json
     ip = data.get('ip')
+    print(ip)
 
     if not ip:
         return jsonify({'error': 'Missing IP'}), 400
 
     try:
+
         networkManagement.blockUser(ip)
-        return jsonify({'status': 'Device blocked successfully'}), 200
+
+        custom_notifications.append({
+            "title": "Device Blocked",
+            "body": f"{ip} was blocked by user action.",
+            "timestamp": time.time()
+        })
+
+        return jsonify({'status': f'{ip} - Device blocked successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/get-blocked-devices', methods=['GET'])
+def get_blocked_devices():
+    filename = os.path.join(FLUTTER_LIB_PATH, 'BlockedDevices.json')
+    try:
+        with open(filename, 'r') as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/unblock-device', methods=['POST'])
+def unblock_device():
+    data = request.get_json()
+    mac_to_remove = data.get("mac")
+    if not mac_to_remove:
+        return jsonify({"error": "Missing MAC address"}), 400
+
+    try:
+        from networkManagement import unblockUser
+        unblockUser(mac_to_remove)
+        return jsonify({"status": f"{mac_to_remove} unblocked"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/scan-log', methods=['GET'])
 def get_scan_log():
     return jsonify(scan_log)
-
-@app.route('/notification-feed', methods=['GET'])
-def get_custom_notifications():
-    return jsonify(custom_notifications)
 
 def graceful_shutdown(signal_received, frame):
     print("\n[INFO] Stopping background scans & shutting down Flask server...")
     sys.exit(0)
 
 if __name__ == '__main__':
-    # Attach shutdown handler
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+
+
+# Attach shutdown handler
     signal.signal(signal.SIGINT, graceful_shutdown)
     signal.signal(signal.SIGTERM, graceful_shutdown)
 

@@ -19,7 +19,14 @@ class NotificationHistoryScreen extends StatelessWidget {
           return Card(
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: ListTile(
-              leading: const Icon(Icons.warning, color: Colors.red),
+              leading: Icon(
+                noti.body.toLowerCase().contains("blocked")
+                    ? Icons.block // icon for block-related notifications
+                    : Icons.warning, // default icon
+                color: noti.body.toLowerCase().contains("blocked")
+                    ? Colors.orange
+                    : Colors.red,
+              ),
               title: Text(noti.title),
               subtitle: Text(noti.body),
               trailing: Text(

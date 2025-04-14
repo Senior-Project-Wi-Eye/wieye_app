@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'current_user.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotiService {
   final notificationsPlugin = FlutterLocalNotificationsPlugin();
@@ -118,6 +119,7 @@ class NotiService {
         timestamp: DateTime.now(),
       );
       _userHistories.putIfAbsent(user, () => []).add(noti);
+      await _saveUserHistory(user);
     }
 
 
@@ -162,6 +164,24 @@ class NotiService {
     }
   }
 
+  Future<void> _saveUserHistory(String user) async {
+    final prefs = await SharedPreferences.getInstance();
+    final history = _userHistories[user] ?? [];
+    final jsonList = history.map((n) => jsonEncode(n.toJson())).toList();
+    await prefs.setStringList('noti_history_$user', jsonList);
+  }
+
+  Future<void> loadUserHistory(String user) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = prefs.getStringList('noti_history_$user') ?? [];
+    final history = jsonList
+        .map((jsonStr) => MalwareNotification.fromJson(jsonDecode(jsonStr)))
+        .toList();
+
+    _userHistories[user] = history;
+  }
+
+
 }
 
 class MalwareNotification {
@@ -174,4 +194,19 @@ class MalwareNotification {
     required this.body,
     required this.timestamp,
   });
+
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'body': body,
+    'timestamp': timestamp.toIso8601String(),
+  };
+
+  factory MalwareNotification.fromJson(Map<String, dynamic> json) {
+    return MalwareNotification(
+      title: json['title'],
+      body: json['body'],
+      timestamp: DateTime.parse(json['timestamp']),
+    );
+  }
 }
+
