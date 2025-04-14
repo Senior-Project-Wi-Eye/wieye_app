@@ -9,16 +9,15 @@ import os
 import json
 
 def scan_network():
-    network_range = "10.0.1.0/24"  # Modify if your network uses a different subnet
-    print(f"Scanning network {network_range}...")
+    iface = "Ethernet 2"
+    network_range = "10.0.1.0/24"
+
+    print(f"Scanning network {network_range} on interface '{iface}'...")
     arp_request = ARP(pdst=network_range)
     broadcast = Ether(dst="ff:ff:ff:ff:ff:ff")
-    answered_list = srp(broadcast / arp_request, timeout=2, verbose=False)[0]
+    answered_list = srp(broadcast / arp_request, timeout=2, iface=iface, verbose=False)[0]
 
-    devices = {}
-    for element in answered_list:
-        devices[element[1].psrc] = element[1].hwsrc
-
+    devices = {resp.psrc: resp.hwsrc for _, resp in answered_list}
     return devices
 
 def get_mac_address(ip, devices):
@@ -122,7 +121,7 @@ def save_results(mac_address):  # Save result to a JSON file with index
 
 def blockUser(ipaddress):
     devices = scan_network()
-    
+
     if not devices:
         print("No devices found.")
         return
@@ -251,9 +250,9 @@ def removeBlockedDeviceFromList(index_to_remove):
 
 def main():
     # blockUser("10.0.1.41")
-    unblockUser("a6:5d:22:a7:04:eb")
-    # devices = scan_network()
-    # show_devices(devices)
+    # unblockUser("a6:5d:22:a7:04:eb")
+    devices = scan_network()
+    show_devices(devices)
 
 if __name__ == "__main__":
     main()

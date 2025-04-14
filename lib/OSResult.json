@@ -1,9 +1,21 @@
 {
     "hosts": [
         {
-            "host": "10.15.159.179",
+            "host": "10.0.1.1",
+            "os": "Unknown"
+        },
+        {
+            "host": "10.0.1.121",
+            "os": "Unknown"
+        },
+        {
+            "host": "10.0.1.168",
+            "os": "Unknown"
+        },
+        {
+            "host": "10.0.1.221",
             "os": "Microsoft Windows 10 1809 - 21H2"
         }
     ],
-    "scan_duration": "1.98 seconds"
+    "scan_duration": "31.77 seconds"
 }

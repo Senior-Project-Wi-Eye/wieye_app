@@ -1,9 +1,21 @@
 {
     "hosts": [
         {
-            "host": "10.15.159.179",
+            "host": "10.0.1.1",
+            "status": "up"
+        },
+        {
+            "host": "10.0.1.121",
+            "status": "up"
+        },
+        {
+            "host": "10.0.1.168",
+            "status": "up"
+        },
+        {
+            "host": "10.0.1.221",
             "status": "up"
         }
     ],
-    "scan_duration": "0.14 seconds"
+    "scan_duration": "2.80 seconds"
 }

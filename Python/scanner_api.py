@@ -28,8 +28,8 @@ custom_notifications = []
 def start_background_scans():
     # change back if not on school wifi !!!! 10.15.159.179
     # 10.0.1.0/24
-    #bgIp = "10.0.1.0/24"
-    bgIp = "10.15.159.179"
+    bgIp = "10.0.1.0/24"
+    # bgIp = "10.15.159.179"
 
     threading.Thread(target=OSScan.constantOSScan, args=(bgIp,), daemon=True).start()
     threading.Thread(target=quickIPScan.constantPingScan, args=(bgIp,), daemon=True).start()

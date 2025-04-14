@@ -7,7 +7,11 @@ import traceback
 from sklearn.preprocessing import StandardScaler
 import os
 import requests
-from Python.networkManagement import blockUser
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Python')))
+from networkManagement import blockUser
+
 
 # Load the trained model and preprocessing tools
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
