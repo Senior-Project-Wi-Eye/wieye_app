@@ -24,7 +24,7 @@ scaler = joblib.load(SCALER_PATH)
 encoders = joblib.load(ENCODER_PATH)
 
 # Define the network interface for packet capture
-networkInterface = r"\Device\NPF_{1907CCC3-8ED0-49B7-B222-C6E87C9D2899}"
+networkInterface = r"\Device\NPF_{A20B8C6B-B55A-4AA9-9699-C129F992E46B}" #Ethernet 2
 #networkInterface = r"\Device\NPF_{46D9FA86-FE63-4E98-8BDD-D9D389631807}"
 
 # Original
@@ -140,7 +140,6 @@ def captureLiveTraffic():
         if prediction[0] == 1:
             maliciousLengths[lengthValue] = currentTime
             result = "Malicious"
-            blockUser(srcIp)
         else:
             result = "Normal Traffic"
 
@@ -150,6 +149,7 @@ def captureLiveTraffic():
         if result == "Malicious":
             try:
                 requests.post("http://127.0.0.1:5000/trigger-malware", json={"info": infoText})
+                requests.post("http://127.0.0.1:5000/block-device", json={"ip": srcIp})
             except Exception as e:
                 print(f"[!] Failed to notify: {e}")
 
