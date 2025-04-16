@@ -76,7 +76,7 @@ class NotiService {
 
         // Check for attack notifications
         if (data["malware"] == true) {
-          final String info = data["info"] ?? "Malicious Traffic Detected!";
+          final String info = data["info"] ?? "Network Under Attack!";
           showNotification(title: "Malware Detected", body: info);
         }
 

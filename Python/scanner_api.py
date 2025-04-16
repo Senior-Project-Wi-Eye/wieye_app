@@ -64,6 +64,7 @@ def get_malware_alert():
     global malware_detected, last_malware_info
     if malware_detected:
         malware_detected = False
+
         return jsonify({"malware": True, "info": last_malware_info})
     return jsonify({"malware": False})
 
