@@ -1,3 +1,7 @@
 {
-
+    "1": {
+        "mac_address": "fe:be:53:35:fa:58",
+        "ip_address": "10.0.1.114",
+        "status": "blocked"
+    }
 }

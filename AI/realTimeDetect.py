@@ -149,7 +149,8 @@ def captureLiveTraffic():
         if result == "Malicious":
             try:
                 requests.post("http://127.0.0.1:5000/trigger-malware", json={"info": infoText})
-                requests.post("http://127.0.0.1:5000/block-device", json={"ip": srcIp})
+                blockUser(srcIp)
+                # requests.post("http://127.0.0.1:5000/block-device", json={"ip": srcIp})
             except Exception as e:
                 print(f"[!] Failed to notify: {e}")
 
