@@ -81,7 +81,7 @@ def block_mac_address(mac_address):
 # block_mac_address("F834412B9F17")
 
 
-def save_results(mac_address):  # Save result to a JSON file with index
+def save_results(mac_address, ip_address):  # Save result to a JSON file with index
     # Construct the path to the Flutter app's 'lib' directory
     FLUTTER_LIB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'wieye_app', 'lib'))
     
@@ -102,7 +102,13 @@ def save_results(mac_address):  # Save result to a JSON file with index
     max_index = max(numeric_keys, default=0)
     
     # Create the entry for the new device at index 1
-    new_data = {"1": {"mac_address": mac_address, "status": "blocked"}}
+    new_data = {
+        "1": {
+            "mac_address": mac_address,
+            "ip_address": ip_address,
+            "status": "blocked"
+        }
+    }
     
     # Shift all existing devices by incrementing their indices
     for idx in range(max_index, 0, -1):
@@ -115,11 +121,24 @@ def save_results(mac_address):  # Save result to a JSON file with index
     with open(filename, 'w') as f:
         json.dump(data, f, indent=4)
 
-    print(f"Blocked MAC address {mac_address} saved to {filename} with index 1")
+    print(f"Blocked device (MAC: {mac_address}, IP: {ip_address}) saved to {filename} with index 1")
 
 
 
 def blockUser(ipaddress):
+    # Construct the path to the Flutter app's 'lib' directory
+    FLUTTER_LIB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'wieye_app', 'lib'))
+    filename = os.path.join(FLUTTER_LIB_PATH, 'BlockedDevices.json')
+
+    # Check if the IP address already exists in the JSON file
+    if os.path.exists(filename):
+        with open(filename, 'r') as f:
+            data = json.load(f)
+            for entry in data.values():
+                if entry.get("ip_address") == ipaddress:
+                    print(f"IP address {ipaddress} is already blocked.")
+                    return
+
     devices = scan_network()
 
     if not devices:
@@ -133,7 +152,7 @@ def blockUser(ipaddress):
         return
 
     block_mac_address(mac.replace(":", ""))
-    save_results(mac)
+    save_results(mac, ipaddress)
 
     
 def unblockUser(mac):
@@ -249,10 +268,10 @@ def removeBlockedDeviceFromList(index_to_remove):
     return True
 
 def main():
-    # blockUser("10.0.1.41")
+    blockUser("10.0.1.172")
     # unblockUser("a6:5d:22:a7:04:eb")
-    devices = scan_network()
-    show_devices(devices)
+    # devices = scan_network()
+    # show_devices(devices)
 
 if __name__ == "__main__":
     main()
