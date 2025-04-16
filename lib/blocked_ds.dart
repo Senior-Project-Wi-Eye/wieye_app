@@ -41,11 +41,15 @@ class _BlockedDevicesScreenState extends State<BlockedDevicesScreen> {
   }
 
   Future<void> unblockDevice(String mac) async {
+    _showLoadingDialog(context, message: "Unblocking...");
+
     final response = await http.post(
       Uri.parse('http://10.15.159.179:5000/unblock-device'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'mac': mac}),
     );
+
+    Navigator.of(context).pop();
 
     if (response.statusCode == 200) {
       setState(() {
@@ -88,4 +92,21 @@ class _BlockedDevicesScreenState extends State<BlockedDevicesScreen> {
       ),
     );
   }
+
+  void _showLoadingDialog(BuildContext context, {String message = 'Loading...'}) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        content: Row(
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(width: 16),
+            Text(message),
+          ],
+        ),
+      ),
+    );
+  }
+
 }

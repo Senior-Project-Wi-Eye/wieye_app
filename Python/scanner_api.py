@@ -128,12 +128,11 @@ def block_device():
         return jsonify({'error': 'Missing IP'}), 400
 
     try:
-
         networkManagement.blockUser(ip)
 
         custom_notifications.append({
             "title": "Device Blocked",
-            "body": f"{ip} was blocked by user action.",
+            "body": f"{ip} was blocked.",
             "timestamp": time.time()
         })
 

@@ -6,7 +6,7 @@ class NotificationHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final notifications = NotiService().notificationHistory;
+    final notifications = NotiService().notificationHistory.reversed.toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Notification History')),
@@ -21,8 +21,8 @@ class NotificationHistoryScreen extends StatelessWidget {
             child: ListTile(
               leading: Icon(
                 noti.body.toLowerCase().contains("blocked")
-                    ? Icons.block // icon for block-related notifications
-                    : Icons.warning, // default icon
+                    ? Icons.block
+                    : Icons.warning,
                 color: noti.body.toLowerCase().contains("blocked")
                     ? Colors.orange
                     : Colors.red,

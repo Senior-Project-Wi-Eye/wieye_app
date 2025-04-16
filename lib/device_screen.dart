@@ -168,8 +168,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
             TextButton(
               onPressed: () async {
                 Navigator.of(context).pop(); // Close device detail dialog
-
-                // _showLoadingDialog(context, message: "Blocking..."); // <-- Commented out
+                _showLoadingDialog(context, message: "Blocking...");
 
                 final response = await http.post(
                   Uri.parse('http://10.15.159.179:5000/block-device'),
@@ -177,7 +176,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                   body: jsonEncode({'ip': device['ip']}),
                 );
 
-                // Navigator.of(context).pop(); // <-- Commented out (remove closing of loading dialog)
+                Navigator.of(context).pop();
 
                 final resBody = jsonDecode(response.body);
                 showDialog(
@@ -187,6 +186,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                     content: Text(resBody['status'] ?? resBody['error'] ?? 'Unknown result'),
                   ),
                 );
+
                 await loadData();
               },
               child: const Text('Block'),
@@ -255,7 +255,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
         body: jsonEncode({'ip': ip}),
       );
 
-      Navigator.of(context).pop(); // ✅ Close loading
+      Navigator.of(context).pop(); // Close loading
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
@@ -308,7 +308,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
         );
       }
     } catch (e) {
-      Navigator.of(context).pop(); // ✅ Close loading on error
+      Navigator.of(context).pop(); // Close loading on error
 
       showDialog(
         context: context,
