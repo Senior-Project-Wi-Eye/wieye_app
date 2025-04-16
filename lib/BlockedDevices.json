@@ -1,10 +1,7 @@
 {
-    "2": {
-        "mac_address": "08-00-27-21-b1-d0",
-        "status": "blocked"
-    },
     "1": {
-        "mac_address": "f8-34-41-2b-9f-17",
+        "mac_address": "fe:53:a8:8d:21:e9",
+        "ip_address": "10.0.1.172",
         "status": "blocked"
     }
 }
