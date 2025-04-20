@@ -12,11 +12,6 @@ import logging
 import time
 import json
 
-
-# Run on two termials
-# C:\Users\tyler\StudioProjects\wieye_app\Python\scanner_api.py
-# C:\Users\tyler\StudioProjects\wieye_app\AI\realTimeDetect.py
-
 app = Flask(__name__)
 
 FLUTTER_LIB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'wieye_app', 'lib'))
@@ -26,10 +21,7 @@ last_malware_info = ""
 custom_notifications = []
 
 def start_background_scans():
-    # change back if not on school wifi !!!! 10.15.159.179
-    # 10.0.1.0/24
     bgIp = "10.0.1.0/24"
-    # bgIp = "10.15.159.179"
 
     threading.Thread(target=OSScan.constantOSScan, args=(bgIp,), daemon=True).start()
     threading.Thread(target=quickIPScan.constantPingScan, args=(bgIp,), daemon=True).start()

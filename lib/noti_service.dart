@@ -77,7 +77,7 @@ class NotiService {
         // Check for attack notifications
         if (data["malware"] == true) {
           final String info = data["info"] ?? "Network Under Attack!";
-          showNotification(title: "Suspicious Traffic Detected", body: info);
+          showNotification(title: "Suspicious Traffic Detected", body: "$info — Blocking initiated.");
         }
 
         // Check for new devices or other custom notifications

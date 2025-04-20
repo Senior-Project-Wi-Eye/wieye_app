@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
@@ -5,8 +6,10 @@ import 'dart:convert';
 import 'home_screen.dart';
 import 'current_user.dart';
 import 'noti_service.dart';
+import 'webview_screen.dart';
+import 'okta_config.dart';
 
-// IneedaPaswword24
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -21,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<String?> fetchUserEmail(String accessToken) async {
     final res = await http.get(
-      Uri.parse('https://dev-63654183.okta.com/oauth2/default/v1/userinfo'),
+      Uri.parse('${OktaConfig.domain}/oauth2/default/v1/userinfo'),
       headers: {'Authorization': 'Bearer $accessToken'},
     );
 
@@ -43,6 +46,18 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _openWebInApp(String url, String title) {
+    if (Platform.isWindows) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => WebviewScreen(url: url, title: title),
+        ),
+      );
+    } else {
+      _launchURL(url); // fallback for other platforms
+    }
+  }
 
   Future<void> _login() async {
     setState(() {
@@ -50,9 +65,9 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     // Okta URL for Token request (OAuth 2.0 Token URL)
-    final url = "https://dev-63654183.okta.com/oauth2/default/v1/token";
-    final clientId = "0oann28vweKfjkcbH5d7";  // Okta Client ID
-    final redirectUri = "com.okta.dev-63654183:/callback";  // redirect URI
+    final url = "${OktaConfig.domain}/oauth2/default/v1/token";
+    final clientId = OktaConfig.clientId;  // Okta Client ID
+    final redirectUri = OktaConfig.redirectUri;  // redirect URI
 
     final response = await http.post(
       Uri.parse(url),
@@ -139,16 +154,20 @@ class _LoginScreenState extends State<LoginScreen> {
             TextButton(
               onPressed: () {
                 // Okta reset password URL
-                final forgotUrl = "https://dev-63654183.okta.com/signin/forgot-password";
-                _launchURL(forgotUrl);
+                _openWebInApp(
+                  "${OktaConfig.domain}/signin/forgot-password",
+                  "Forgot Password",
+                );
               },
               child: const Text("Forgot Password?"),
             ),
             TextButton(
               onPressed: () {
                 // Okta registration URL
-                final signupUrl = "https://dev-63654183.okta.com/signin/register";
-                _launchURL(signupUrl);
+                _openWebInApp(
+                  "${OktaConfig.domain}/signin/register",
+                  "Create Account",
+                );
               },
               child: const Text("Create Account"),
             ),

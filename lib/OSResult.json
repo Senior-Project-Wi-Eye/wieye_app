@@ -5,17 +5,9 @@
             "os": "Unknown"
         },
         {
-            "host": "10.0.1.80",
-            "os": "Unknown"
-        },
-        {
-            "host": "10.0.1.114",
-            "os": "Apple iOS 15.0 - 15.6 (Darwin 21.1.0 - 21.6.0)"
-        },
-        {
             "host": "10.0.1.221",
             "os": "Microsoft Windows 10 1809 - 21H2"
         }
     ],
-    "scan_duration": "20.68 seconds"
+    "scan_duration": "15.41 seconds"
 }

@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // To use rootBundle for loading assets
 import 'blocked_ds.dart';
 
-
 bool isScanning = false;
-
 
 class DeviceScreen extends StatefulWidget {
   const DeviceScreen({super.key, required this.title});
@@ -323,5 +321,4 @@ class _DeviceScreenState extends State<DeviceScreen> {
       });
     }
   }
-
 }

@@ -5,7 +5,6 @@ import pandas as pd
 import time
 import traceback
 from sklearn.preprocessing import StandardScaler
-import os
 import requests
 import sys
 import os
@@ -26,9 +25,6 @@ encoders = joblib.load(ENCODER_PATH)
 # Define the network interface for packet capture
 networkInterface = r"\Device\NPF_{A20B8C6B-B55A-4AA9-9699-C129F992E46B}" #Ethernet 2
 #networkInterface = r"\Device\NPF_{46D9FA86-FE63-4E98-8BDD-D9D389631807}"
-
-# Original
-# r"\Device\NPF_{28DF2159-9CD6-475C-977B-40917DC2795C}"
 
 # Load whitelist IPs
 try:
@@ -148,9 +144,18 @@ def captureLiveTraffic():
         # Notify Flask server
         if result == "Malicious":
             try:
+                # Send malware detection notification
                 requests.post("http://127.0.0.1:5000/trigger-malware", json={"info": infoText})
+
+                # Block the user
                 blockUser(srcIp)
-                # requests.post("http://127.0.0.1:5000/block-device", json={"ip": srcIp})
+
+                # Send a success notification
+                requests.post("http://127.0.0.1:5000/trigger-notification", json={
+                    "title": "Device Blocked",
+                    "body": f"{srcIp} has been successfully blocked due to suspicious activity."
+                })
+
             except Exception as e:
                 print(f"[!] Failed to notify: {e}")
 
