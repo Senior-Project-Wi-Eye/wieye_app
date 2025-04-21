@@ -1,7 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // To use rootBundle for loading assets
 import 'blocked_ds.dart';
 
 bool isScanning = false;
@@ -17,33 +16,21 @@ class DeviceScreen extends StatefulWidget {
 class _DeviceScreenState extends State<DeviceScreen> {
   List<Map<String, dynamic>> devices = [];
 
-  // Assign icons to devices based on the OS
   IconData getDeviceIcon(String type) {
-    if (type.toLowerCase().contains('windows')) {
-      return Icons.laptop_windows;
-    } else if (type.toLowerCase().contains('android')) {
-      return Icons.phone_android;
-    } else if (type.toLowerCase().contains('ios') || type.toLowerCase().contains('apple')) {
-      return Icons.phone_iphone;
-    } else if (type.toLowerCase().contains('linux')) {
-      return Icons.laptop;
-    } else if (type.toLowerCase().contains('mac')) {
-      return Icons.desktop_mac;
-    } else {
-      return Icons.devices;
-    }
+    if (type.toLowerCase().contains('windows')) return Icons.laptop_windows;
+    if (type.toLowerCase().contains('android')) return Icons.phone_android;
+    if (type.toLowerCase().contains('ios') || type.toLowerCase().contains('apple')) return Icons.phone_iphone;
+    if (type.toLowerCase().contains('linux')) return Icons.laptop;
+    if (type.toLowerCase().contains('mac')) return Icons.desktop_mac;
+    return Icons.devices;
   }
 
-  // Load the JSON files and parse them
   Future<void> loadData() async {
     const apiUrl = 'http://10.15.159.179:5000/get-all-results';
-
     try {
       final response = await http.get(Uri.parse(apiUrl));
-
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-
         final ipJson = jsonDecode(result['ip_result']);
         final osJson = jsonDecode(result['os_result']);
         final detailJson = jsonDecode(result['detailed_result']);
@@ -58,16 +45,10 @@ class _DeviceScreenState extends State<DeviceScreen> {
           String ip = ipHost['host'];
           String status = ipHost['status'];
 
-          var osHost = osHosts.firstWhere(
-                (os) => os['host'] == ip,
-            orElse: () => {'os': 'Unknown'},
-          );
+          var osHost = osHosts.firstWhere((os) => os['host'] == ip, orElse: () => {'os': 'Unknown'});
           String os = osHost['os'] ?? 'Unknown';
 
-          var detailHost = detailHosts.firstWhere(
-                (detail) => detail['host'] == ip,
-            orElse: () => {'ports': [], 'services': []},
-          );
+          var detailHost = detailHosts.firstWhere((detail) => detail['host'] == ip, orElse: () => {'ports': [], 'services': []});
 
           List ports = detailHost['ports'] ?? [];
           List services = detailHost['services'] ?? [];
@@ -108,7 +89,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
     );
   }
 
-
   @override
   void initState() {
     super.initState();
@@ -118,7 +98,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
   void _showDetailDialog(BuildContext context, Map<String, dynamic> device) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Text('Device Details: ${device['ip']}'),
           content: SingleChildScrollView(
@@ -128,7 +108,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
               children: [
                 Text('OS: ${device['os']}', style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-
                 if (device['ports'].isNotEmpty) ...[
                   const Text('Ports:', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
@@ -138,7 +117,6 @@ class _DeviceScreenState extends State<DeviceScreen> {
                   )).toList(),
                   const SizedBox(height: 8),
                 ],
-
                 if (device['services'].isNotEmpty) ...[
                   const Text('Services:', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
@@ -152,12 +130,12 @@ class _DeviceScreenState extends State<DeviceScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Close'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close device detail dialog
+                Navigator.of(dialogContext).pop();
                 _showLoadingDialog(context, message: "Scanning...");
                 scanDevice(device['ip']);
               },
@@ -165,7 +143,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
             ),
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop(); // Close device detail dialog
+                Navigator.of(dialogContext).pop();
                 _showLoadingDialog(context, message: "Blocking...");
 
                 final response = await http.post(
@@ -174,7 +152,7 @@ class _DeviceScreenState extends State<DeviceScreen> {
                   body: jsonEncode({'ip': device['ip']}),
                 );
 
-                Navigator.of(context).pop();
+                if (mounted) Navigator.of(context).pop(); // Close loading
 
                 final resBody = jsonDecode(response.body);
                 showDialog(
@@ -195,56 +173,9 @@ class _DeviceScreenState extends State<DeviceScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.block,
-              color: Colors.lightBlueAccent,
-            ),
-            tooltip: 'Blocked Devices',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const BlockedDevicesScreen()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: devices.isEmpty
-          ? const Center(child: Text("No devices found or failed to load."))
-          : ListView.builder(
-      itemCount: devices.length,
-        itemBuilder: (context, index) {
-          var device = devices[index];
-          // Determine the color based on the device status
-          Color statusColor = device['status'].toString().toLowerCase() == 'up' ? Colors.green : Colors.red;
-
-          return Card(
-            child: ListTile(
-              leading: Icon(getDeviceIcon(device["os"] ?? 'unknown'), size: 40),
-              title: Text("IP: ${device['ip']}"),
-              subtitle: Text("OS: ${device['os']} - Status: ${device['status']}"),
-              trailing: Icon(Icons.circle, color: statusColor, size: 14),
-              onTap: () => _showDetailDialog(context, device),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Future<void> scanDevice(String ip) async {
     const apiUrl = 'http://10.15.159.179:5000/scan';
-
-    setState(() {
-      isScanning = true;
-    });
+    setState(() => isScanning = true);
 
     try {
       final response = await http.post(
@@ -253,25 +184,22 @@ class _DeviceScreenState extends State<DeviceScreen> {
         body: jsonEncode({'ip': ip}),
       );
 
-      Navigator.of(context).pop(); // Close loading
+      if (mounted) Navigator.of(context).pop(); // Close loading
 
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
-
         if (result['hosts'] == null || result['hosts'].isEmpty) {
-          Navigator.of(context, rootNavigator: true).pop();
           showDialog(
             context: context,
-            builder: (_) => AlertDialog(
-              title: const Text("No Device Found"),
-              content: const Text("No matching device found during scan."),
+            builder: (_) => const AlertDialog(
+              title: Text("No Device Found"),
+              content: Text("No matching device found during scan."),
             ),
           );
           return;
         }
 
         final newHost = result['hosts'][0];
-
         final updatedDevices = devices.map((device) {
           if (device['ip'] == newHost['host']) {
             return {
@@ -306,19 +234,56 @@ class _DeviceScreenState extends State<DeviceScreen> {
         );
       }
     } catch (e) {
-      Navigator.of(context).pop(); // Close loading on error
-
+      if (mounted) Navigator.of(context).pop();
       showDialog(
         context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("Error"),
-          content: const Text("Could not connect to scanner server."),
+        builder: (_) => const AlertDialog(
+          title: Text("Error"),
+          content: Text("Could not connect to scanner server."),
         ),
       );
     } finally {
-      setState(() {
-        isScanning = false;
-      });
+      setState(() => isScanning = false);
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.block, color: Colors.lightBlueAccent),
+            tooltip: 'Blocked Devices',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const BlockedDevicesScreen()),
+              );
+            },
+          ),
+        ],
+      ),
+      body: devices.isEmpty
+          ? const Center(child: Text("No devices found or failed to load."))
+          : ListView.builder(
+        itemCount: devices.length,
+        itemBuilder: (context, index) {
+          var device = devices[index];
+          Color statusColor = device['status'].toString().toLowerCase() == 'up' ? Colors.green : Colors.red;
+
+          return Card(
+            child: ListTile(
+              leading: Icon(getDeviceIcon(device["os"] ?? 'unknown'), size: 40),
+              title: Text("IP: ${device['ip']}"),
+              subtitle: Text("OS: ${device['os']} - Status: ${device['status']}"),
+              trailing: Icon(Icons.circle, color: statusColor, size: 14),
+              onTap: () => _showDetailDialog(context, device),
+            ),
+          );
+        },
+      ),
+    );
   }
 }

@@ -181,6 +181,13 @@ class NotiService {
     _userHistories[user] = history;
   }
 
+  Future<void> clearHistory() async {
+    final user = currentUserEmail ?? 'guest';
+    _userHistories[user] = [];
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('noti_history_$user');
+  }
+
 
 }
 
