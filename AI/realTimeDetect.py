@@ -111,7 +111,7 @@ def captureLiveTraffic():
     print("[+] Starting real-time network traffic capture...")
 
     maliciousLengths = {}
-    TIME_WINDOW = 0  # seconds
+    TIME_WINDOW = 10  # seconds
 
     # Create CSV with headers
     csvFile = os.path.join(BASE_DIR,"traffic_log.csv")
