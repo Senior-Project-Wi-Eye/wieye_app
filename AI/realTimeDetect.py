@@ -4,13 +4,13 @@ import numpy as np
 import pandas as pd
 import time
 import traceback
+import csv
 from sklearn.preprocessing import StandardScaler
 import requests
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Python')))
 from networkManagement import blockUser
-
 
 # Load the trained model and preprocessing tools
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -24,7 +24,6 @@ encoders = joblib.load(ENCODER_PATH)
 
 # Define the network interface for packet capture
 networkInterface = r"\Device\NPF_{A20B8C6B-B55A-4AA9-9699-C129F992E46B}" #Ethernet 2
-#networkInterface = r"\Device\NPF_{46D9FA86-FE63-4E98-8BDD-D9D389631807}"
 
 # Load whitelist IPs
 try:
@@ -74,7 +73,7 @@ def extractFeatures(packet):
                 srcIp == "N/A" or dstIp == "N/A" or
                 srcIp in whiteListIPs or dstIp in whiteListIPs
         ):
-            return None, None, None, None, None
+            return None, None, None, None, None, None, None, None
 
         # Encode features
         srcPortEncoded = safeEncode(srcPort, encoders["Source Port"])
@@ -100,24 +99,43 @@ def extractFeatures(packet):
             if hasattr(packet.tcp, 'seq') and hasattr(packet.tcp, 'ack'):
                 infoText += f" Seq={packet.tcp.seq} Ack={packet.tcp.ack}"
 
-        return features, infoText, srcIp, dstIp, length
+        return features, infoText, srcIp, dstIp, length, srcPort, dstPort, protocol
+
     except Exception as e:
         print(f"Error processing packet: {e}")
         traceback.print_exc()
-        return None, None, None, None, None
+        return None, None, None, None, None, None, None, None
 
 # Capture and classify live traffic
 def captureLiveTraffic():
     print("[+] Starting real-time network traffic capture...")
 
-    maliciousLengths = {}  # length → timestamp
-    TIME_WINDOW = 10  # seconds
+    maliciousLengths = {}
+    TIME_WINDOW = 0  # seconds
+
+    # Create CSV with headers
+    csvFile = os.path.join(BASE_DIR,"traffic_log.csv")
+    with open(csvFile, mode='w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(["Timestamp", "Source IP", "Source Port", "Destination IP", "Destination Port", "Protocol", "Length", "Classification"])
 
     capture = pyshark.LiveCapture(interface=networkInterface)
 
     for packet in capture:
-        features, infoText, srcIp, dstIp, lengthValue = extractFeatures(packet)
+        features, infoText, srcIp, dstIp, lengthValue, srcPort, dstPort, protocol = extractFeatures(packet)
         if features is None:
+            continue
+
+        timestamp = pd.Timestamp.now()
+
+        # Automatically classify same-IP traffic as normal
+        if srcIp == dstIp:
+            result = "Normal Traffic"
+            print(f"[+] Classification: {result} | {infoText}")
+
+            with open(csvFile, mode='a', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow([timestamp, srcIp, srcPort, dstIp, dstPort, protocol, lengthValue, result])
             continue
 
         currentTime = time.time()
@@ -127,11 +145,11 @@ def captureLiveTraffic():
         for l in expired:
             del maliciousLengths[l]
 
-        # SKIP EVERYTHING if length was flagged recently
+        # Skip recently flagged lengths
         if lengthValue in maliciousLengths:
             continue
 
-        # Only predict if not recently flagged
+        # Predict traffic type
         prediction = logRegModel.predict(features)
         if prediction[0] == 1:
             maliciousLengths[lengthValue] = currentTime
@@ -158,6 +176,10 @@ def captureLiveTraffic():
 
             except Exception as e:
                 print(f"[!] Failed to notify: {e}")
+
+        with open(csvFile, mode='a', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([timestamp, srcIp, srcPort, dstIp, dstPort, protocol, lengthValue, result])
 
 # Entry point
 if __name__ == "__main__":
