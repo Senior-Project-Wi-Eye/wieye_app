@@ -76,7 +76,7 @@ def process_os_results():
         data = json.load(file)
 
     # Define allowed OS patterns
-    allowed_keywords = ["Windows 10", "Unknown"]
+    allowed_keywords = ["Windows 10", "Windows 11", "iOS", "Android", "Unknown"]
 
     # Block any host whose OS is NOT in the allowed list
     for host in data.get("hosts", []):
